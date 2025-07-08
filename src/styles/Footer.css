@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --footer-bg: #ffffff;
+  --footer-heading: #1f2937;
+  --footer-text: #475467;
+  --footer-link: #1ccac8;
+  --footer-link-hover: #17b3ad;
+  --footer-divider: #e5e7eb;
+}
+
+.footer {
+  background: var(--footer-bg);
+  color: var(--footer-text);
+  font-family: 'Poppins', sans-serif;
+  padding: 60px 20px 20px;
+}
+
+/* --- Top columns --- */
+.footer-columns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-column {
+  flex: 1;
+  min-width: 200px;
+}
+
+.footer-column h4 {
+  color: var(--footer-heading);
+  font-size: 1.125rem;
+  margin-bottom: 12px;
+}
+
+.footer-column p {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.footer-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-column ul li {
+  margin-bottom: 8px;
+}
+
+.footer-column ul li a {
+  color: var(--footer-text);
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: color 0.2s;
+}
+
+.footer-column ul li a:hover {
+  color: var(--footer-link);
+}
+
+/* Contact list tweaks */
+.contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contact-list a {
+  color: var(--footer-text);
+}
+
+.contact-list a:hover {
+  color: var(--footer-link);
+}
+
+/* Divider */
+.footer-divider {
+  height: 1px;
+  background: var(--footer-divider);
+  margin: 32px auto;
+  max-width: 1200px;
+}
+
+/* --- Bottom bar --- */
+.footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+
+.footer-legal {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-legal a {
+  color: var(--footer-text);
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-legal a:hover {
+  color: var(--footer-link);
+}
+
+.footer-copy {
+  font-size: 0.875rem;
+  color: var(--footer-text);
+  margin-top: 12px;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .footer-bottom {
+    flex-direction: column;
+    gap: 12px;
+  }
+  .footer-copy {
+    margin: 0;
+  }
+}

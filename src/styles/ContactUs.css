@@ -1,0 +1,86 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --contact-bg: #ffffff;
+  --contact-accent: #1ccac8;
+  --contact-accent-hover: #17b3ad;
+  --contact-dark: #1a202c;
+  --contact-muted: #4a5568;
+  --contact-border: #e2e8f0;
+}
+
+.contact-section {
+  background: var(--contact-bg);
+  padding: 80px 20px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.contact-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: start;
+}
+
+/* Left panel */
+.contact-info h2 {
+  font-size: 2rem;
+  margin-bottom: 12px;
+  color: var(--contact-dark);
+}
+.contact-info p {
+  color: var(--contact-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Right panel (form) */
+.contact-form .form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+.contact-form label {
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--contact-dark);
+}
+.contact-form input,
+.contact-form textarea {
+  border: 1px solid var(--contact-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 1rem;
+  color: var(--contact-dark);
+  background: #fafafa;
+  transition: border-color 0.2s;
+}
+.contact-form input:focus,
+.contact-form textarea:focus {
+  outline: none;
+  border-color: var(--contact-accent);
+}
+
+.contact-submit {
+  background: var(--contact-accent);
+  color: #fff;
+  border: none;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.contact-submit:hover {
+  background: var(--contact-accent-hover);
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  .contact-container {
+    grid-template-columns: 1fr;
+  }
+}

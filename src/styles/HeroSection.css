@@ -1,0 +1,118 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+.hero-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
+  gap: 40px;
+  padding: 80px 20px;
+  background: #f9fafb;            /* very light gray */
+  position: relative;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* subtle background blobs */
+.hero-section::before,
+.hero-section::after {
+  content: '';
+  position: absolute;
+  border-radius: 50%;
+  background: #e2f5e9;  /* pale mint */
+  opacity: 0.6;
+}
+.hero-section::before {
+  width: 400px; height: 400px;
+  top: -100px; left: -100px;
+}
+.hero-section::after {
+  width: 300px; height: 300px;
+  bottom: -80px; right: -60px;
+}
+
+/* —— HERO INTRO —— */
+.hero-intro {
+  position: relative;
+  z-index: 1;
+  padding: 20px;
+}
+.intro-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1a2a3a;
+  margin-bottom: 16px;
+  line-height: 1.2;
+}
+.intro-subtitle {
+  font-size: 1rem;
+  color: #475467;
+  margin-bottom: 24px;
+}
+.intro-search {
+  max-width: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+/* —— INQUIRY FORM —— */
+.hero-inquiry {
+  background: #ffffff;
+  padding: 32px;
+  border-radius: 16px;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
+  min-width: 300px;
+}
+.inquiry-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a2a3a;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.inquiry-form .ant-form-item-label > label {
+  color: #1a2a3a;
+  font-weight: 500;
+}
+.inquiry-row {
+  display: flex;
+  gap: 16px;
+}
+.inquiry-col {
+  flex: 1;
+}
+
+/* rounded inputs */
+.inquiry-form .ant-input,
+.inquiry-form .ant-input-affix-wrapper,
+.inquiry-form .ant-select-selector,
+.inquiry-form .ant-picker,
+.inquiry-form .ant-upload {
+  border-radius: 8px;
+}
+
+/* submit */
+.inquiry-submit {
+  background-color: #197f3d;       /* fresh green accent */
+  border-color: #197f3d;
+  font-weight: 600;
+  border-radius: 8px;
+}
+.inquiry-submit:hover,
+.inquiry-submit:focus {
+  background-color: #145a2a;
+  border-color: #145a2a;
+}
+
+/* RESPONSIVE: stack on mobile */
+@media (max-width: 700px) {
+  .hero-section {
+    padding: 60px 16px;
+  }
+  .inquiry-row {
+    flex-direction: column;
+  }
+  .intro-search {
+    width: 100%;
+  }
+}
