@@ -24,7 +24,7 @@ export default function HeroSection() {
   };
 
   return (
-    <section className="hero-section">
+    <section className="hero-section" id="hero">
       {/* Left: Hero text + search */}
       <div className="hero-intro">
         <h1 className="intro-title">

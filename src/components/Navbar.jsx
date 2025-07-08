@@ -1,34 +1,49 @@
+// src/components/Navbar.jsx
 import React from 'react';
 import { Menu, Button } from 'antd';
 import { MedicineBoxOutlined } from '@ant-design/icons';
+import { useNavigate, useLocation } from 'react-router-dom';
 import '../styles/Navbar.css';
 
-const menuItems = [
-  { key: 'hospitals',   label: 'Hospitals'  },
-  { key: 'doctors',     label: 'Doctors'    },
-  { key: 'treatments',  label: 'Treatments' },
-  { key: 'contact',     label: 'Contact Us' },
-  { key: 'about',       label: 'About Us'   },
-];
-
 export default function Navbar() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  const onClickItem = ({ key }) => {
+    navigate(key);
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        {/* icon only; no text */}
-        <div className="navbar-logo">
-          <MedicineBoxOutlined />
-        </div>
+        <MedicineBoxOutlined
+          className="navbar-logo"
+          onClick={() => navigate('/')}
+          style={{ fontSize: '1.8rem', color: '#17b3ad', cursor: 'pointer' }}
+        />
 
         <Menu
           mode="horizontal"
+          selectedKeys={[pathname]}
+          onClick={onClickItem}
+          items={[
+            { key: '/',          label: 'Home' },
+            { key: '/hospitals', label: 'Hospitals' },
+            { key: '/doctors',   label: 'Doctors' },
+            { key: '/treatments',label: 'Treatments' },
+            { key: '/about',     label: 'About Us' },
+            { key: '/contact',   label: 'Contact Us' },
+          ]}
           className="navbar-menu"
-          items={menuItems}
         />
 
         <div className="navbar-divider" />
 
-        <Button className="get-quote-btn" type="primary">
+        <Button
+          type="primary"
+          className="get-quote-btn"
+          onClick={() => navigate('/get-quote')}
+        >
           Get a Quote
         </Button>
       </div>

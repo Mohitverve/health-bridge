@@ -1,0 +1,134 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --accent: #17b3ad;
+  --accent-fade: rgba(23, 179, 173, 0.15);
+  --bg-light: #ffffff;
+  --text-dark: #1e293b;
+  --text-muted: #475467;
+  --card-bg: #ffffff;
+  --duration: 0.6s;
+  --easing: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.about-section {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-light);
+  padding: 100px 20px;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* animated gradient blob */
+.blob-bg {
+  position: absolute;
+  top: -20%;
+  right: -10%;
+  width: 60vw;
+  height: 60vw;
+  background: radial-gradient(circle at 30% 30%, #c8f5e4, transparent 60%);
+  animation: blobFloat 12s infinite alternate ease-in-out;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: 0;
+}
+@keyframes blobFloat {
+  to {
+    transform: translate(-20px, 30px) scale(1.2);
+  }
+}
+
+/* Intro */
+.about-intro {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto 70px;
+  text-align: center;
+  z-index: 1;
+}
+.about-intro h2 {
+  font-size: 3rem;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+.about-intro p {
+  color: var(--text-muted);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+/* Features grid */
+.about-features {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+  z-index: 1;
+}
+
+/* Single card */
+.about-card {
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 32px 24px;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  transform: translateY(60px);
+  opacity: 0;
+  transition:
+    transform var(--duration) var(--easing),
+    opacity var(--duration) var(--easing);
+}
+.about-card.in-view {
+  transform: translateY(0);
+  opacity: 1;
+}
+.about-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+}
+
+/* Icon wrapper with pop */
+.about-icon-wrapper {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 20px;
+}
+.about-icon-bg {
+  position: absolute;
+  inset: 0;
+  background: var(--accent-fade);
+  border-radius: 50%;
+  transform: scale(0.8);
+  transition: transform 0.4s var(--easing);
+}
+.about-icon {
+  position: absolute;
+  inset: 0;
+  font-size: 2.25rem;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.4s var(--easing);
+}
+.about-card:hover .about-icon-bg {
+  transform: scale(1.1);
+}
+.about-card:hover .about-icon {
+  transform: scale(1.2);
+}
+
+/* Title & text */
+.about-card h3 {
+  font-size: 1.5rem;
+  color: var(--text-dark);
+  margin-bottom: 12px;
+}
+.about-card p {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
