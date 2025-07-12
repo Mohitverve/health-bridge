@@ -27,11 +27,14 @@ export default function Navbar() {
           selectedKeys={[pathname]}
           onClick={onClickItem}
           items={[
-         
+
+               { key: '/',     label: 'Home' },
+            { key: '/About',     label: 'About Us' },
+             
             { key: '/hospitals', label: 'Hospitals' },
             { key: '/doc',   label: 'Doctors' },
             { key: '/Treatments',label: 'Treatments' },
-            { key: '/About',     label: 'About Us' },
+         
             { key: '/contact',   label: 'Contact Us' },
           ]}
           className="navbar-menu"
