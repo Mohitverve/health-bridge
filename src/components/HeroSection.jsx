@@ -1,31 +1,100 @@
-import React from "react";
+// src/components/HeroSection.jsx
+
+import React, { useEffect, useState } from "react";
 import {
   Form,
   Input,
-  Select,
-  DatePicker,
-  Upload,
   Button,
   Checkbox,
+  Upload,
+  AutoComplete,
+  message,
 } from "antd";
-import { InboxOutlined, SearchOutlined } from "@ant-design/icons";
+import {
+  InboxOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+import { getDocs, collection } from "firebase/firestore";
+import { db } from "../firebase";
 import "../styles/HeroSection.css";
 
-const { Option } = Select;
 const { Dragger } = Upload;
 const { TextArea } = Input;
 
 export default function HeroSection() {
   const [form] = Form.useForm();
+  const navigate = useNavigate();
 
+  // state for all items in Firestore
+  const [hospitals, setHospitals]     = useState([]);
+  const [doctors, setDoctors]         = useState([]);
+  const [treatments, setTreatments]   = useState([]);
+  const [options, setOptions]         = useState([]);
+
+  // load all three collections once
+  useEffect(() => {
+    (async () => {
+      const [hSnap, dSnap, tSnap] = await Promise.all([
+        getDocs(collection(db, "hospitals")),
+        getDocs(collection(db, "doctors")),
+        getDocs(collection(db, "treatments")),
+      ]);
+      setHospitals(hSnap.docs.map(d => d.data().name));
+      setDoctors(dSnap.docs.map(d => d.data().name));
+      setTreatments(tSnap.docs.map(d => d.data().name));
+    })();
+  }, []);
+
+  // as user types, build dropdown options
+  const onSearch = (val) => {
+    const q = val.trim().toLowerCase();
+    if (!q) {
+      setOptions([]);
+      return;
+    }
+    const make = (arr, type) =>
+      arr
+        .filter(name => name.toLowerCase().includes(q))
+        .map(name => ({
+          value: name,
+          label: `${type}: ${name}`,
+          type,
+        }));
+    setOptions([
+      ...make(hospitals, "Hospital"),
+      ...make(doctors,   "Doctor"),
+      ...make(treatments,"Treatment"),
+    ]);
+  };
+
+  // when user selects an option, redirect to the matching page
+  const onSelect = (value, option) => {
+    const type = option.type;
+    const pathMap = {
+      Hospital:  "/Hospital",
+      Doctor:    "/Doctors",
+      Treatment: "/Treatments",
+    };
+    const route = pathMap[type];
+    if (!route) {
+      message.error("No route for " + type);
+      return;
+    }
+    navigate(`${route}?search=${encodeURIComponent(value)}`);
+  };
+
+  // contact form submission
   const onFinish = (values) => {
-    console.log("Inquiry submitted:", values);
+    console.log("Contact form submitted:", values);
     // TODO: wire up to Firestore / backend
+    message.success("Thank you! We’ll be in touch shortly.");
+    form.resetFields();
   };
 
   return (
     <section className="hero-section" id="hero">
-      {/* Left: Hero text + search */}
+      {/* Left: Hero intro + live search */}
       <div className="hero-intro">
         <h1 className="intro-title">
           Your Gateway to <br />
@@ -34,23 +103,31 @@ export default function HeroSection() {
         <p className="intro-subtitle">
           Affordable medical journeys, seamless support, 24/7 care.
         </p>
-        <Input
-          className="intro-search"
-          size="large"
+
+        <AutoComplete
+          options={options}
+          style={{ width: '100%' }}
+          onSearch={onSearch}
+          onSelect={onSelect}
           placeholder="Search hospitals, doctors, treatments..."
-          prefix={<SearchOutlined />}
-        />
+        >
+          <Input.Search
+            size="large"
+            enterButton={<SearchOutlined />}
+          />
+        </AutoComplete>
       </div>
 
-      {/* Right: Inquiry form */}
+      {/* Right: Contact Us form */}
       <div className="hero-inquiry">
-        <h2 className="inquiry-title">Get In Touch</h2>
+        <h2 className="inquiry-title">Contact Us</h2>
         <Form
           form={form}
           layout="vertical"
           onFinish={onFinish}
           className="inquiry-form"
         >
+          {/* Full Name */}
           <Form.Item
             name="fullName"
             label="Full Name"
@@ -59,101 +136,65 @@ export default function HeroSection() {
             <Input placeholder="John Doe" size="large" />
           </Form.Item>
 
+          {/* Email & Phone */}
           <div className="inquiry-row">
-            <Form.Item
-              name="country"
-              label="Country"
-              rules={[{ required: true }]}
-              className="inquiry-col"
-            >
-              <Select placeholder="Select country" size="large">
-                <Option value="india">India</Option>
-                <Option value="usa">United States</Option>
-                <Option value="uk">United Kingdom</Option>
-              </Select>
-            </Form.Item>
-            <Form.Item
-              name="city"
-              label="City"
-              rules={[{ required: true }]}
-              className="inquiry-col"
-            >
-              <Select placeholder="Select city" size="large">
-                <Option value="delhi">New Delhi</Option>
-                <Option value="mumbai">Mumbai</Option>
-                <Option value="bangalore">Bangalore</Option>
-              </Select>
-            </Form.Item>
-          </div>
-
-          <div className="inquiry-row">
-            <Form.Item
-              name="mobile"
-              label="Mobile"
-              rules={[{ required: true }]}
-              className="inquiry-col"
-            >
-              <Input
-                size="large"
-                placeholder="12345 67890"
-                addonBefore="+91"
-              />
-            </Form.Item>
             <Form.Item
               name="email"
               label="Email"
               rules={[
-                { required: true },
+                { required: true, message: "Please enter your email" },
                 { type: "email", message: "Enter a valid email" },
               ]}
               className="inquiry-col"
             >
-              <Input size="large" placeholder="you@example.com" />
+              <Input placeholder="you@example.com" size="large" />
+            </Form.Item>
+            <Form.Item
+              name="phone"
+              label="Phone"
+              rules={[{ required: true, message: "Please enter your phone" }]}
+              className="inquiry-col"
+            >
+              <Input placeholder="+1 234 567 8900" size="large" />
             </Form.Item>
           </div>
 
+          {/* Subject */}
           <Form.Item
-            name="condition"
-            label="Medical Condition"
-            rules={[{ required: true }]}
+            name="subject"
+            label="Subject"
+            rules={[{ required: true, message: "Please enter a subject" }]}
           >
-            <TextArea rows={3} placeholder="Briefly describe…" />
+            <Input placeholder="Subject of your message" size="large" />
           </Form.Item>
 
-          <div className="inquiry-row">
-            <Form.Item
-              name="dob"
-              label="Date of Birth"
-              rules={[{ required: true }]}
-              className="inquiry-col"
-            >
-              <DatePicker
-                size="large"
-                style={{ width: "100%" }}
-                format="DD-MM-YYYY"
-              />
-            </Form.Item>
-            <Form.Item
-              name="documents"
-              label="Upload Docs"
-              valuePropName="fileList"
-              getValueFromEvent={(e) =>
-                Array.isArray(e) ? e : e && e.fileList
-              }
-              className="inquiry-col"
-            >
-              <Dragger
-                beforeUpload={() => false}
-                showUploadList={{ showRemoveIcon: true }}
-              >
-                <p className="ant-upload-drag-icon">
-                  <InboxOutlined />
-                </p>
-                <p className="ant-upload-text">Drag or click to upload</p>
-              </Dragger>
-            </Form.Item>
-          </div>
+          {/* Message */}
+          <Form.Item
+            name="message"
+            label="Message"
+            rules={[{ required: true, message: "Please enter your message" }]}
+          >
+            <TextArea rows={4} placeholder="Type your message here…" />
+          </Form.Item>
 
+          {/* Optional Attachment */}
+          <Form.Item
+            name="attachment"
+            label="Attachment (optional)"
+            valuePropName="fileList"
+            getValueFromEvent={e => (Array.isArray(e) ? e : e?.fileList)}
+          >
+            <Dragger beforeUpload={() => false} showUploadList>
+              <p className="ant-upload-drag-icon">
+                <InboxOutlined />
+              </p>
+              <p className="ant-upload-text">
+                Drag or click to upload a file
+              </p>
+            </Dragger>
+          </Form.Item>
+
+          {/* Captcha */}
           <Form.Item
             name="captcha"
             valuePropName="checked"
@@ -169,6 +210,7 @@ export default function HeroSection() {
             <Checkbox>I’m not a robot</Checkbox>
           </Form.Item>
 
+          {/* Submit */}
           <Form.Item>
             <Button
               type="primary"
@@ -177,7 +219,7 @@ export default function HeroSection() {
               block
               className="inquiry-submit"
             >
-              Submit Inquiry
+              Send Message
             </Button>
           </Form.Item>
         </Form>

@@ -55,8 +55,7 @@ export default function HospitalShopPage() {
 
   return (
     <Layout>
-      <Header />
-      <Navbar />
+    
 
       <Layout hasSider>
         <Sider width={240} className="shop-sider">

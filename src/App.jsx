@@ -9,21 +9,30 @@ import Home           from './pages/Home';
 import HospitalsPage  from './pages/HospitalsPage';
 
 import Admin          from './pages/Admin';
+import AboutUsPage from './pages/AboutUsPage';
+import Header from './components/Header';
+import TreatmentsPage from './pages/TreatmentsPage';
+import GetQuotePage from './pages/GetQuotePage';
+import DoctorsPage from './pages/DoctorsPage';
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Navbar />
 
+      <Navbar />
+<Header/>
       <Routes>
         <Route path="/"            element={<Home />} />
-        <Route path="/about"       element={<Home scrollTo="about" />} />
         <Route path="/contact"     element={<Home scrollTo="contact" />} />
         <Route path="/get-quote"   element={<Home scrollTo="hero" />} />
 
         <Route path="/hospitals"   element={<HospitalsPage />} />
+            <Route path="/About"   element={<AboutUsPage />} />
+               <Route path="/Quote"   element={<GetQuotePage />} />
+                <Route path="/Doc"   element={<DoctorsPage />} />
        
         <Route path="/admin"       element={<Admin />} />
+          <Route path="/Treatments"       element={<TreatmentsPage />} />
       </Routes>
 
       <Footer />

@@ -1,67 +1,53 @@
 import React from 'react';
+import { Card, Row, Col } from 'antd';
+import {
+  MailOutlined,
+  PhoneOutlined,
+  EnvironmentOutlined,
+} from '@ant-design/icons';
 import '../styles/ContactUs.css';
 
 export default function ContactUs() {
   return (
-    <section className="contact-section" id='contact'>
+    <section className="contact-section" id="contact">
       <div className="contact-container">
-        {/* Left side: headline + blurb */}
+        {/* left side */}
         <div className="contact-info">
           <h2>Contact Us</h2>
           <p>
-            Have questions or need guidance? Fill out the form and our team
-            will be in touch within 24 hours.
+            Have questions or need guidance? Reach out via email, phone, or
+            visit our office—our team is standing by to help you.
           </p>
         </div>
 
-        {/* Right side: the form */}
-        <form className="contact-form">
-          <div className="form-group">
-            <label htmlFor="name">Full Name</label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              placeholder="Your full name"
-              required
-            />
-          </div>
+        {/* right side */}
+        <Card className="contact-card" bordered={false}>
+          <Row gutter={[0, 24]}>
+            <Col span={24} className="contact-item">
+              <MailOutlined className="contact-icon" />
+              <div>
+                <h4>Email</h4>
+                <p>support@healthbridge.com</p>
+              </div>
+            </Col>
 
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
+            <Col span={24} className="contact-item">
+              <PhoneOutlined className="contact-icon" />
+              <div>
+                <h4>Phone</h4>
+                <p>+91 98765 43210</p>
+              </div>
+            </Col>
 
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input
-              type="tel"
-              id="phone"
-              name="phone"
-              placeholder="+1 555 123 4567"
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="message">Your Message</label>
-            <textarea
-              id="message"
-              name="message"
-              rows="5"
-              placeholder="How can we help you today?"
-            ></textarea>
-          </div>
-
-          <button type="submit" className="contact-submit">
-            Send Message
-          </button>
-        </form>
+            <Col span={24} className="contact-item">
+              <EnvironmentOutlined className="contact-icon" />
+              <div>
+                <h4>Address</h4>
+                <p>123 Health St, New Delhi, India</p>
+              </div>
+            </Col>
+          </Row>
+        </Card>
       </div>
     </section>
   );

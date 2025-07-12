@@ -1,0 +1,109 @@
+:root {
+  --bg-light:    #40a761;
+  --text-dark:   #1a202c;
+  --text-muted:  #4a5568;
+  --accent:      #d4d4d4;
+  --card-bg:     #ffffff;
+  --transition:  0.3s ease;
+}
+
+.au-page {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-dark);
+}
+
+/* HERO */
+.au-hero {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  margin-bottom: 64px;
+}
+.au-hero-text {
+  flex: 1;
+}
+.au-hero-text h1 {
+  font-size: 2.5rem;
+  margin-bottom: 16px;
+}
+.au-hero-text p {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+.au-hero-image {
+  flex: 1;
+  text-align: right;
+}
+.au-hero-image img {
+  max-width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* MISSION / VISION */
+.au-mv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+  margin-bottom: 64px;
+}
+.au-card {
+  background: var(--card-bg);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.au-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.au-card h2 {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+}
+.au-card p {
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+/* STATS */
+.au-stats {
+  display: flex;
+  justify-content: space-around;
+  text-align: center;
+  background: var(--bg-light);
+  padding: 32px 0;
+  border-radius: 8px;
+}
+.au-stats .ant-statistic {
+  flex: 1;
+}
+.au-stats .ant-statistic-title {
+  font-size: 1rem;
+  color: white;
+}
+.au-stats .ant-statistic-content {
+  font-size: 2rem !important;
+  color: var(--accent) !important;
+}
+
+/* Responsive tweaks */
+@media (max-width: 768px) {
+  .au-hero {
+    flex-direction: column-reverse;
+    text-align: center;
+  }
+  .au-hero-image {
+    text-align: center;
+  }
+  .au-stats {
+    flex-direction: column;
+    gap: 16px;
+  }
+}

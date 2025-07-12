@@ -27,11 +27,11 @@ export default function Navbar() {
           selectedKeys={[pathname]}
           onClick={onClickItem}
           items={[
-            { key: '/',          label: 'Home' },
+         
             { key: '/hospitals', label: 'Hospitals' },
-            { key: '/doctors',   label: 'Doctors' },
-            { key: '/treatments',label: 'Treatments' },
-            { key: '/about',     label: 'About Us' },
+            { key: '/doc',   label: 'Doctors' },
+            { key: '/Treatments',label: 'Treatments' },
+            { key: '/About',     label: 'About Us' },
             { key: '/contact',   label: 'Contact Us' },
           ]}
           className="navbar-menu"
@@ -42,7 +42,7 @@ export default function Navbar() {
         <Button
           type="primary"
           className="get-quote-btn"
-          onClick={() => navigate('/get-quote')}
+          onClick={() => navigate('/quote')}
         >
           Get a Quote
         </Button>

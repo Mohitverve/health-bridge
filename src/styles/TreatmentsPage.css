@@ -1,0 +1,72 @@
+/* Imports & root vars */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+:root {
+  --bg-light:   #f9fafb;
+  --white:      #fff;
+  --dark:       #1f2937;
+  --muted:      #6b7280;
+  --accent:     #17b3ad;
+}
+
+/* Hero */
+.tp-hero {
+  text-align: center;
+  padding: 80px 24px 40px;
+  background: var(--bg-light);
+  font-family: 'Poppins', sans-serif;
+}
+.tp-hero h1 {
+  font-size: 2.5rem;
+  margin-bottom: 8px;
+  color: var(--dark);
+}
+.tp-hero p {
+  color: var(--muted);
+  font-size: 1.1rem;
+}
+
+/* Grid container */
+.treatments-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+  background: var(--bg-light);
+}
+
+/* Each treatment card */
+.treatment-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: var(--white);
+}
+.treatment-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
+/* Cover image */
+.treatment-card img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+/* Meta & Learn more */
+.treatment-learnmore {
+  color: var(--accent);
+  padding: 0;
+  margin-top: 12px;
+  font-weight: 600;
+}
+.treatment-learnmore:hover {
+  text-decoration: underline;
+}
+
+/* Modal image */
+.modal-image {
+  width: 100%;
+  border-radius: 8px;
+}
