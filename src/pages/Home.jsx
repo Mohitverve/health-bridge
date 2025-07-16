@@ -6,7 +6,8 @@ import PlanJourney      from '../components/PlanJourney';
 import ContactUs        from '../components/ContactUs';
 import Header from '../components/Header';
 import TopHospitals from "../components/TopHospitals";
-
+import Advantages from "../components/Advantages";
+import PatientGallery from '../components/PatientGallery';
 export default function Home({ scrollTo }) {
   useEffect(() => {
     if (!scrollTo) return;
@@ -33,8 +34,8 @@ export default function Home({ scrollTo }) {
 <section>
   <TopHospitals/>
 </section>
-     
-     
+     <Advantages/>
+<PatientGallery/>
       <section id="contact">
         <ContactUs />
       </section>

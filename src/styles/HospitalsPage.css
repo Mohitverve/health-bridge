@@ -28,6 +28,10 @@
   padding: 0;
 }
 
+.shop-card .ant-card-meta-description {
+  margin-bottom: 16px;
+}
+
 .shop-content {
   background: #f7f8fa;
   padding: 32px;
@@ -78,11 +82,12 @@
 }
 
 .shop-btn {
-  background: #17b3ad;
-  border-color: #17b3ad;
+  background: #17b33b;
+  border-color: #17b336;
+   margin-top: 16px;  
 }
 
 .shop-btn:hover {
-  background: #13957f;
-  border-color: #13957f;
+  background: #139529;
+  border-color: #139515;
 }

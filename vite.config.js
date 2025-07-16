@@ -7,6 +7,7 @@ export default defineConfig({
     include: [
       '@ant-design/icons',
       '@ant-design/icons/es/icons/HospitalOutlined.js'
+        
     ]
   }
 });

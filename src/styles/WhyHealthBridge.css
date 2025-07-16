@@ -1,0 +1,116 @@
+/* WhyHealthBridge.css */
+
+.why-section {
+  padding: 80px 24px;
+  background: #f9fafb;
+}
+
+.why-heading {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 48px;
+  color: #2d3748;
+}
+
+/* Grid: 2 columns by default, 4 columns on large viewports */
+.why-grid {
+  display: grid;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (min-width: 1200px) {
+  .why-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Decorative line behind cards */
+.why-grid::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 5%;
+  right: 5%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+}
+
+/* Card base styling */
+.why-card {
+  position: relative;
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px 24px;
+  /* force a more rectangular shape */
+  min-height: 260px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  text-align: center;
+  z-index: 1;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, background-color 0.4s ease;
+}
+
+/* Card hover animation */
+.why-card:hover {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  background-color: #f0fff4;
+}
+
+/* Icon styling */
+.why-icon {
+  font-size: 2.8rem;
+  color: #38a169;
+  margin-bottom: 20px;
+  transition: transform 0.4s ease, color 0.4s ease;
+}
+
+/* Icon hover: pulse & rotate */
+.why-card:hover .why-icon {
+  transform: rotate(15deg) scale(1.2);
+  color: #2f855a;
+}
+
+.why-title {
+  font-size: 1.35rem;
+  margin-bottom: 12px;
+  color: #2d3748;
+}
+
+.why-desc {
+  color: #4a5568;
+  line-height: 1.6;
+  flex-grow: 1;
+}
+
+/* small subtle line under each title */
+.why-title::after {
+  content: '';
+  display: block;
+  width: 40px;
+  height: 3px;
+  background: #38a169;
+  margin: 8px auto 0;
+  border-radius: 2px;
+}
+
+/* Fade-in animation when in view (fallback for CSS-only) */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.why-card {
+  opacity: 0;
+  animation: fadeUp 0.6s ease forwards;
+}
+.why-card:nth-child(1) { animation-delay: 0.1s; }
+.why-card:nth-child(2) { animation-delay: 0.2s; }
+.why-card:nth-child(3) { animation-delay: 0.3s; }
+.why-card:nth-child(4) { animation-delay: 0.4s; }

@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
 :root {
-  --bg-gradient-start: #f0f9f5;
+  --bg-gradient-start: #ffffff;
   --bg-gradient-end:   #ffffff;
   --accent:            #1ccac8;
   --accent-dark:       #17b3ad;
-  --text-dark:         #1a202c;
-  --text-muted:        #4a5568;
+  --text-dark:         white;
+  --text-muted:        #ffffff;
   --card-shadow:       rgba(0, 0, 0, 0.08);
 }
 
@@ -59,7 +59,7 @@
 /* Right panel */
 .contact-card {
   flex: 1 1 320px;
-  background: #fff;
+  background: #029288;
   border-radius: 16px;
   padding: 32px;
   box-shadow: 0 8px 24px var(--card-shadow);

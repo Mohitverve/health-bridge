@@ -18,6 +18,7 @@ import Header from '../components/Header';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import '../styles/HospitalsPage.css'; // you can keep reusing this
+import WhyHealthBridge from '../components/WhyHealthBridge';
 
 const { Sider, Content } = Layout;
 const { Meta } = Card;
@@ -178,7 +179,6 @@ export default function TreatmentsShopPage() {
           </Modal>
         </Content>
       </Layout>
-
       <Footer />
     </Layout>
   );

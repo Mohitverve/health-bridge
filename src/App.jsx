@@ -14,6 +14,7 @@ import Header from './components/Header';
 import TreatmentsPage from './pages/TreatmentsPage';
 import GetQuotePage from './pages/GetQuotePage';
 import DoctorsPage from './pages/DoctorsPage';
+import BlogsPage from './pages/BlogsPage';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/About"   element={<AboutUsPage />} />
                <Route path="/Quote"   element={<GetQuotePage />} />
                 <Route path="/Doc"   element={<DoctorsPage />} />
+                     <Route path="/Blogs"   element={<BlogsPage />} />
        
         <Route path="/admin"       element={<Admin />} />
           <Route path="/Treatments"       element={<TreatmentsPage />} />

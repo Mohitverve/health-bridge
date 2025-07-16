@@ -8,6 +8,7 @@ import {
 import '../styles/AboutUsPage.css';
 import heroIllustration from '../assets/health.jpg';
 import { useNavigate } from 'react-router-dom';
+import WhyHealthBridge from '../components/WhyHealthBridge';
 
 
 export default function AboutUsPage() {
@@ -68,6 +69,8 @@ export default function AboutUsPage() {
           prefix={<HeartOutlined />}
         />
       </section>
+
+      <WhyHealthBridge/>
     </div>
   );
 }

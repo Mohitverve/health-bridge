@@ -1,0 +1,4 @@
+html, body {
+  /* prevent anything from ever going wider than the viewport */
+  overflow-x: hidden;
+}
