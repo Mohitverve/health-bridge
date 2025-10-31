@@ -30,7 +30,7 @@ export default function App() {
         <Route path="/hospitals"   element={<HospitalsPage />} />
             <Route path="/About"   element={<AboutUsPage />} />
                <Route path="/Quote"   element={<GetQuotePage />} />
-                <Route path="/Doc"   element={<DoctorsPage />} />
+               
                      <Route path="/Blogs"   element={<BlogsPage />} />
        
         <Route path="/admin"       element={<Admin />} />
