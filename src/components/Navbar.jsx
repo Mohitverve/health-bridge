@@ -32,7 +32,7 @@ export default function Navbar() {
             { key: '/About',     label: 'About Us' },
              
             { key: '/hospitals', label: 'Hospitals' },
-            { key: '/doc',   label: 'Doctors' },
+          
             { key: '/Treatments',label: 'Treatments' },
          
             { key: '/contact',   label: 'Contact Us' },
