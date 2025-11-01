@@ -1,113 +1,542 @@
 /* src/styles/Admin.css */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-:root{
-  --bg:#f7f8fa;
-  --surface:#ffffff;
-  --text:#1f2937;
-  --muted:#6b7280;
-  --brand:#17b33b;
-  --brand-strong:#139529;
-  --radius:14px;
-  --shadow:0 12px 28px rgba(0,0,0,.08);
-  --hair: rgba(0,0,0,0.08);
-  --ring: 0 0 0 3px rgba(23,179,59,.18);
+:root {
+  --bg: #f7f8fa;
+  --surface: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --brand: #17b33b;
+  --brand-strong: #139529;
+  --brand-light: #dcfce7;
+  --radius: 14px;
+  --shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --hair: rgba(0, 0, 0, 0.08);
+  --ring: 0 0 0 3px rgba(23, 179, 59, 0.18);
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
 }
 
-*{ font-family:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
-
-.admin-wrap{
-  background:var(--bg);
-  min-height:100vh;
+* {
+  font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
 }
 
-/* Sticky topbar */
-.admin-topbar{
-  position:sticky;
-  top:0;
-  z-index:100;
-  backdrop-filter: saturate(160%) blur(8px);
-  background: rgba(255,255,255,0.72);
-  border-bottom:1px solid var(--hair);
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  padding:10px 14px;
-}
-.admin-topbar .topbar-left{
-  display:flex; align-items:center; gap:10px;
-  font-weight:700; color:var(--text);
-}
-.admin-topbar .topbar-right{
-  display:flex; align-items:center; gap:10px;
-}
-.topbar-search input{
-  border-radius:999px !important;
+.admin-wrap {
+  background: var(--bg);
+  min-height: 100vh;
 }
 
-/* Page */
-.admin-page{
-  max-width:1100px;
-  margin:24px auto 64px;
-  padding:0 16px;
+/* ==================== Sticky Topbar ==================== */
+.admin-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: saturate(160%) blur(12px);
+  background: rgba(255, 255, 255, 0.75);
+  border-bottom: 1px solid var(--hair);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.panel{
-  background:var(--surface);
-  border-radius:var(--radius);
-  box-shadow: 0 1px 0 var(--hair);
-  margin-bottom:16px;
-  padding:16px;
+.admin-topbar .topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text);
 }
 
-.panel .ant-form-item{
-  margin-bottom:14px;
+.admin-topbar .topbar-left .anticon {
+  font-size: 22px;
+  color: var(--brand);
 }
 
-/* Tables */
-.ant-table{
-  border-radius:12px;
-}
-.ant-table-thead > tr > th{
-  background:#f9fafb !important;
-}
-.ant-table-tbody > tr:hover > td{
-  background:#fafafa !important;
+.admin-topbar .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-/* Thumbnail col */
-.thumb{
-  width:40px;height:40px;border-radius:10px;overflow:hidden;background:#f3f4f6;
+.topbar-search {
+  width: 280px;
+}
+
+.topbar-search input {
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+/* ==================== Page Layout ==================== */
+.admin-page {
+  max-width: 1200px;
+  margin: 24px auto 64px;
+  padding: 0 20px;
+}
+
+/* ==================== Tabs ==================== */
+.admin-page .ant-tabs-nav {
+  background: var(--surface);
+  padding: 8px 16px 0;
+  border-radius: var(--radius) var(--radius) 0 0;
+  margin-bottom: 0;
+}
+
+.admin-page .ant-tabs-tab {
+  font-weight: 600;
+  font-size: 15px;
+  padding: 12px 24px;
+}
+
+.admin-page .ant-tabs-tab-active {
+  color: var(--brand) !important;
+}
+
+.admin-page .ant-tabs-ink-bar {
+  background: var(--brand);
+  height: 3px;
+}
+
+/* ==================== Panel Cards ==================== */
+.panel {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--hair);
+  margin-bottom: 20px;
+  padding: 24px;
+}
+
+.panel .ant-typography {
+  margin-bottom: 20px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.panel .ant-form-item {
+  margin-bottom: 16px;
+}
+
+.panel .ant-form-item-label > label {
+  font-weight: 500;
+  color: var(--text);
+}
+
+/* ==================== Tables ==================== */
+.ant-table {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.ant-table-thead > tr > th {
+  background: #f9fafb !important;
+  font-weight: 600;
+  color: var(--text);
+  border-bottom: 2px solid var(--hair);
+}
+
+.ant-table-tbody > tr {
+  transition: all 0.2s ease;
+}
+
+.ant-table-tbody > tr:hover > td {
+  background: #fafafa !important;
+}
+
+.ant-table-cell {
+  padding: 14px 16px !important;
+}
+
+/* ==================== Thumbnail Column ==================== */
+.thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f3f4f6;
   box-shadow: inset 0 0 0 1px var(--hair);
-}
-.thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
-
-/* Small text */
-.muted{ color:var(--muted); font-size:.9rem; }
-.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-
-/* CSV area */
-.csv-template{
-  background:#f9fafb; border:1px dashed var(--hair);
-  border-radius:12px; padding:10px 12px; color:var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Focus rings */
-.ant-input:focus, .ant-select-focused .ant-select-selector, .ant-picker-focused{
+.thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* ==================== Buttons ==================== */
+.ant-btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+  font-weight: 600;
+  border-radius: 10px;
+  height: 40px;
+  padding: 0 20px;
+  box-shadow: 0 2px 6px rgba(23, 179, 59, 0.25);
+  transition: all 0.3s ease;
+}
+
+.ant-btn-primary:hover {
+  background: var(--brand-strong) !important;
+  border-color: var(--brand-strong) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(23, 179, 59, 0.3);
+}
+
+.ant-btn-primary:active {
+  transform: translateY(0);
+}
+
+.ant-btn-default {
+  border-radius: 10px;
+  font-weight: 500;
+  height: 40px;
+  transition: all 0.3s ease;
+}
+
+.ant-btn-default:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.ant-btn-link {
+  font-weight: 500;
+}
+
+.ant-btn-link.ant-btn-dangerous {
+  color: var(--danger);
+}
+
+.ant-btn-link.ant-btn-dangerous:hover {
+  color: var(--danger-hover);
+}
+
+/* ==================== Tags ==================== */
+.ant-tag {
+  border-radius: 6px;
+  padding: 2px 10px;
+  font-weight: 500;
+  font-size: 13px;
+  border: none;
+}
+
+/* ==================== Form Inputs ==================== */
+.ant-input,
+.ant-input-number,
+.ant-select-selector,
+.ant-picker {
+  border-radius: 10px !important;
+  border-color: var(--hair);
+  transition: all 0.3s ease;
+}
+
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-input-number-focused,
+.ant-select-focused .ant-select-selector,
+.ant-picker-focused {
   box-shadow: var(--ring) !important;
   border-color: var(--brand) !important;
 }
 
-.ant-btn-primary{
-  background:var(--brand); border-color:var(--brand);
-  font-weight:600; border-radius:10px;
-}
-.ant-btn-primary:hover{
-  background:var(--brand-strong) !important; border-color:var(--brand-strong) !important;
+.ant-input:hover,
+.ant-input-number:hover,
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector,
+.ant-picker:hover {
+  border-color: var(--brand);
 }
 
-/* Mobile */
-@media (max-width: 768px){
-  .admin-page{ padding:0 12px; }
-  .panel{ padding:12px; }
+textarea.ant-input {
+  border-radius: 10px !important;
+}
+
+/* ==================== Modals ==================== */
+.ant-modal-header {
+  border-bottom: 1px solid var(--hair);
+  padding: 20px 24px;
+}
+
+.ant-modal-title {
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--text);
+}
+
+.ant-modal-body {
+  padding: 24px;
+}
+
+.ant-modal-footer {
+  border-top: 1px solid var(--hair);
+  padding: 16px 24px;
+}
+
+.ant-modal-content {
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* ==================== CSV Import Drawer ==================== */
+.ant-drawer-header {
+  border-bottom: 1px solid var(--hair);
+  padding: 20px 24px;
+}
+
+.ant-drawer-title {
+  font-weight: 700;
+  font-size: 18px;
+  color: var(--text);
+}
+
+.ant-drawer-body {
+  padding: 24px;
+}
+
+.csv-template {
+  background: #f9fafb;
+  border: 1px dashed var(--hair);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin: 12px 0;
+}
+
+.csv-template strong {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text);
+  font-size: 14px;
+}
+
+.csv-template .mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  color: var(--brand);
+  background: rgba(23, 179, 59, 0.08);
+  padding: 8px 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.preview-table {
+  margin: 16px 0;
+  border: 1px solid var(--hair);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.preview-table .ant-table {
+  margin: 0;
+}
+
+/* ==================== Upload Dragger ==================== */
+.ant-upload-drag {
+  border-radius: 12px !important;
+  border: 2px dashed var(--hair) !important;
+  background: #fafbfc !important;
+  transition: all 0.3s ease;
+}
+
+.ant-upload-drag:hover {
+  border-color: var(--brand) !important;
+  background: var(--brand-light) !important;
+}
+
+.ant-upload-drag-icon .anticon {
+  color: var(--brand);
+  font-size: 48px;
+}
+
+.ant-upload-text {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.ant-upload-hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ==================== Utility Classes ==================== */
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ==================== Popconfirm ==================== */
+.ant-popover-inner {
+  border-radius: 10px;
+}
+
+.ant-popover-message-title {
+  padding-left: 28px;
+}
+
+.ant-popover-buttons .ant-btn {
+  border-radius: 8px;
+  font-weight: 500;
+  height: 32px;
+}
+
+/* ==================== Space Component ==================== */
+.ant-space-item .ant-btn {
+  margin: 0;
+}
+
+/* ==================== Loading States ==================== */
+.ant-spin {
+  color: var(--brand);
+}
+
+.ant-spin-dot-item {
+  background-color: var(--brand);
+}
+
+/* ==================== Empty State ==================== */
+.ant-empty-description {
+  color: var(--muted);
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 992px) {
+  .admin-page {
+    padding: 0 16px;
+  }
+
+  .panel {
+    padding: 20px;
+  }
+
+  .topbar-search {
+    width: 200px;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-topbar {
+    padding: 10px 12px;
+  }
+
+  .admin-topbar .topbar-left {
+    font-size: 16px;
+  }
+
+  .admin-topbar .topbar-left .anticon {
+    font-size: 20px;
+  }
+
+  .topbar-search {
+    width: 160px;
+  }
+
+  .topbar-search input {
+    font-size: 14px;
+  }
+
+  .admin-topbar .topbar-right .ant-btn span {
+    display: none;
+  }
+
+  .admin-topbar .topbar-right .ant-btn {
+    padding: 0 12px;
+  }
+
+  .admin-page {
+    padding: 0 12px;
+    margin: 16px auto 48px;
+  }
+
+  .panel {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .ant-table-cell {
+    padding: 10px 12px !important;
+    font-size: 14px;
+  }
+
+  .thumb {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ant-btn-primary,
+  .ant-btn-default {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 576px) {
+  .admin-topbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .admin-topbar .topbar-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .topbar-search {
+    flex: 1;
+  }
+
+  .panel .ant-typography {
+    font-size: 18px;
+  }
+}
+
+/* ==================== Custom Scrollbar ==================== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* ==================== Print Styles ==================== */
+@media print {
+  .admin-topbar,
+  .ant-btn,
+  .ant-pagination {
+    display: none !important;
+  }
+
+  .admin-page {
+    max-width: 100%;
+    padding: 0;
+  }
+
+  .panel {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    page-break-inside: avoid;
+  }
 }

@@ -1,291 +1,303 @@
-// src/pages/TreatmentsShopPage.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Layout, Select, Card, Row, Col, Button, Spin, Empty, Modal, Input,
-  Drawer, Tag, Skeleton, Affix, Space, Grid,
+  Layout,
+  Row,
+  Col,
+  Input,
+  Select,
+  Button,
+  Tag,
+  Table,
+  Card,
+  Space,
+  Statistic,
+  Tooltip,
+  Divider,
+  Empty,
+  Skeleton,
+  Grid,
+  Breadcrumb,
 } from 'antd';
+import { useNavigate, Link,useLocation } from 'react-router-dom';
 import { getDocs, collection } from 'firebase/firestore';
 import { db } from '../firebase';
-import { FunnelPlotOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons';
-import '../styles/HospitalsPage.css';
+import {
+  SearchOutlined,
+  ReloadOutlined,
+  AppstoreOutlined,
+  BarsOutlined,
+  ArrowRightOutlined,
+} from '@ant-design/icons';
 import '../styles/TreatmentsPage.css';
 
-const { Sider, Content } = Layout;
-const { Meta } = Card;
+const { Content } = Layout;
 const { Option } = Select;
 const { useBreakpoint } = Grid;
 
-// Cloudinary-friendly helper
-function cld(url, transform = 'f_auto,q_auto') {
+function cld(url, t = 'f_auto,q_auto') {
   if (!url) return url;
-  return url.includes('/upload/')
-    ? url.replace('/upload/', `/upload/${transform}/`)
-    : url;
+  return url.includes('/upload/') ? url.replace('/upload/', `/upload/${t}/`) : url;
 }
-// Resolve image from either `imageUrl`(new) or `image`(old)
-const getImg = (obj) => obj?.imageUrl || obj?.image || '';
+const getImg = (o) => o?.imageUrl || o?.image || '';
 
 export default function TreatmentsPage() {
-  const [treatments, setTreatments] = useState([]);
+  const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterName, setFilterName] = useState('All Treatments');
-  const [query, setQuery] = useState('');
-  const [sortBy, setSortBy] = useState('nameAsc');
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [selectedTreatment, setSelectedTreatment] = useState(null);
+const { pathname } = useLocation();
+  // filters
+  const [q, setQ] = useState('');
+  const [category, setCategory] = useState('All');
+  const [sortBy, setSortBy] = useState('a-z');
+  const [view, setView] = useState('table'); // table | grid
 
   const screens = useBreakpoint();
-  const isMobile = !screens.md;
+  const navigate = useNavigate();
 
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const snap = await getDocs(collection(db, 'treatments'));
-        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        setTreatments(data);
+        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        setData(items);
       } catch (e) {
-        console.error('Failed to fetch treatments', e);
+        console.error('Fetch treatments failed', e);
       } finally {
         setLoading(false);
       }
     })();
   }, []);
 
-  const names = useMemo(
-    () => ['All Treatments', ...new Set(treatments.map((t) => t.name).filter(Boolean))],
-    [treatments]
-  );
+  const categories = useMemo(() => {
+    const set = new Set();
+    data.forEach((t) => t?.category && set.add(t.category));
+    return ['All', ...Array.from(set)];
+  }, [data]);
 
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalized = q.trim().toLowerCase();
   const filtered = useMemo(() => {
-    const base = treatments.filter((t) => {
-      const passName = filterName === 'All Treatments' || t.name === filterName;
-      if (!passName) return false;
-      if (!normalizedQuery) return true;
-      const hay = `${t.name || ''} ${t.description || ''}`.toLowerCase();
-      return hay.includes(normalizedQuery);
+    let arr = data.filter((t) => {
+      if (category !== 'All' && t.category !== category) return false;
+      if (!normalized) return true;
+      const hay = `${t.name || ''} ${t.description || ''} ${t.keywords || ''}`.toLowerCase();
+      return hay.includes(normalized);
     });
-    return [...base].sort((a, b) => {
+
+    arr = arr.sort((a, b) => {
       const an = (a.name || '').toLowerCase();
       const bn = (b.name || '').toLowerCase();
-      if (sortBy === 'nameAsc') return an.localeCompare(bn);
-      if (sortBy === 'nameDesc') return bn.localeCompare(an);
+      if (sortBy === 'a-z') return an.localeCompare(bn);
+      if (sortBy === 'z-a') return bn.localeCompare(an);
       return 0;
     });
-  }, [treatments, filterName, normalizedQuery, sortBy]);
+    return arr;
+  }, [data, category, normalized, sortBy]);
 
-  const showDetails = (t) => { setSelectedTreatment(t); setModalVisible(true); };
-  const closeModal = () => { setModalVisible(false); setSelectedTreatment(null); };
+  const clearFilters = () => {
+    setQ('');
+    setCategory('All');
+    setSortBy('a-z');
+  };
 
-  const clearAll = () => { setFilterName('All Treatments'); setQuery(''); setSortBy('nameAsc'); };
-
-  const FiltersBlock = (
-    <div className="shop-filters">
-      <h3 className="filter-title">Filters</h3>
-
-      <div className="filter-row">
-        <label htmlFor="treatment-filter">Treatment</label>
-        <Select id="treatment-filter" value={filterName} onChange={setFilterName} className="filter-select" popupMatchSelectWidth>
-          {names.map((n) => (<Option key={n} value={n}>{n}</Option>))}
-        </Select>
-      </div>
-
-      <div className="filter-row">
-        <label htmlFor="search-input">Search</label>
-        <Input
-          id="search-input"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          prefix={<SearchOutlined />}
-          placeholder="Find a treatment…"
-          allowClear
-        />
-      </div>
-
-      <div className="filter-row">
-        <label htmlFor="sort-select">Sort</label>
-        <Select id="sort-select" value={sortBy} onChange={setSortBy} className="filter-select">
-          <Option value="nameAsc">Name (A → Z)</Option>
-          <Option value="nameDesc">Name (Z → A)</Option>
-        </Select>
-      </div>
-
-      <Button type="link" className="clear-filters" icon={<ReloadOutlined />} onClick={clearAll}>
-        Clear Filters
-      </Button>
-    </div>
-  );
-
-  return (
-    <Layout className="shop-layout">
-      <Affix offsetTop={0}>
-        <div className="shop-topbar">
-          <Space className="topbar-inner" size="middle" align="center">
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              prefix={<SearchOutlined />}
-              placeholder="Search treatments"
-              allowClear
-              className="topbar-search"
-            />
-            <Button
-              type="default"
-              icon={<FunnelPlotOutlined />}
-              className="topbar-filter-btn"
-              onClick={() => setDrawerOpen(true)}
-            >
-              Filters
-            </Button>
-          </Space>
-        </div>
-      </Affix>
-
-      <Layout hasSider className="shop-body">
-        {!isMobile && (
-          <Sider width={280} className="shop-sider">
-            <Affix offsetTop={88}>{FiltersBlock}</Affix>
-          </Sider>
-        )}
-
-        <Content className="shop-content">
-          <div className="shop-heading-block">
-            <h1 className="shop-heading">Browse Treatments</h1>
-            <p className="shop-subheading">Refine by treatment or search, then tap “View Details”.</p>
-            <div className="active-chips">
-              {filterName !== 'All Treatments' && (
-                <Tag closable onClose={(e) => { e.preventDefault(); setFilterName('All Treatments'); }}>
-                  {filterName}
-                </Tag>
-              )}
-              {normalizedQuery && (
-                <Tag closable onClose={(e) => { e.preventDefault(); setQuery(''); }}>
-                  Search: “{query}”
-                </Tag>
-              )}
-              {sortBy !== 'nameAsc' && (
-                <Tag closable onClose={(e) => { e.preventDefault(); setSortBy('nameAsc'); }}>
-                  Sort: {sortBy === 'nameDesc' ? 'Z → A' : 'A → Z'}
-                </Tag>
-              )}
+  // ---------- TABLE VIEW ----------
+  const columns = [
+    {
+      title: 'Treatment',
+      dataIndex: 'name',
+      key: 'name',
+      render: (text, record) => (
+        <Space>
+          <img
+            src={cld(getImg(record), 'f_auto,q_auto,w_120,h_90,c_fill') || '/fallback.jpg'}
+            alt={record.name}
+            onError={(e) => (e.currentTarget.src = '/fallback.jpg')}
+            className="tc-thumb"
+          />
+          <div>
+            <div className="tc-title">{text}</div>
+            <div className="tc-sub">
+              {record.description ? truncate(record.description, 100) : '—'}
             </div>
           </div>
-
-          {loading ? (
-            <div className="loading">
-              <Row gutter={[16, 16]}>
-                {Array.from({ length: isMobile ? 4 : 8 }).map((_, i) => (
-                  <Col xs={12} sm={12} md={8} lg={6} key={i}>
-                    <Card className="shop-card">
-                      <Skeleton.Image active style={{ width: '100%', height: 160 }} />
-                      <Skeleton active paragraph={{ rows: 2 }} title className="mt-12" />
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="empty-wrap">
-              <Empty
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-                description={<span>Nothing matches your filters. Try clearing them or searching differently.</span>}
-              />
-              <Button onClick={clearAll} className="mt-12">Reset Filters</Button>
-            </div>
-          ) : (
-            <Row gutter={[16, 16]}>
-              {filtered.map((t) => {
-                const rawSrc = getImg(t);
-                const src = cld(rawSrc, 'f_auto,q_auto,w_600,h_380,c_fill');
-                return (
-                  <Col xs={12} sm={12} md={8} lg={6} key={t.id}>
-                    <Card
-                      hoverable
-                      className="shop-card"
-                      cover={
-                        <div className="shop-card-cover">
-                          <img
-                            src={src || '/fallback.jpg'}
-                            alt={t.name}
-                            className="shop-card-img"
-                            loading="lazy"
-                            onError={(e) => { e.currentTarget.src = '/fallback.jpg'; }}
-                          />
-                        </div>
-                      }
-                      onClick={() => showDetails(t)}
-                      bodyStyle={{ padding: 14 }}
-                    >
-                      <Meta
-                        title={<span className="card-title">{t.name}</span>}
-                        description={
-                          <span className="card-desc">
-                            {t.description ? (t.description.length > 90 ? `${t.description.slice(0, 90)}…` : t.description) : 'No description available.'}
-                          </span>
-                        }
-                      />
-                      <div className="shop-card-footer">
-                        {t.category && <Tag className="shop-tag">{t.category}</Tag>}
-                        {t.duration && <Tag className="shop-tag">⏱ {t.duration}</Tag>}
-                        <Button
-                          type="primary"
-                          className="shop-btn"
-                          block
-                          onClick={(e) => { e.stopPropagation(); showDetails(t); }}
-                        >
-                          View Details
-                        </Button>
-                      </div>
-                    </Card>
-                  </Col>
-                );
-              })}
-            </Row>
-          )}
-
-          {/* use 'visible' for AntD v4 */}
-          <Modal
-            title={selectedTreatment?.name || 'Details'}
-            visible={modalVisible}
-            onCancel={closeModal}
-            footer={[<Button key="close" onClick={closeModal}>Close</Button>]}
-            centered
-          >
-            {selectedTreatment ? (
-              <>
-                <div className="modal-cover">
-                  <img
-                    src={cld(getImg(selectedTreatment), 'f_auto,q_auto,w_1200,c_fit') || '/fallback.jpg'}
-                    alt={selectedTreatment.name}
-                    loading="lazy"
-                    onError={(e) => { e.currentTarget.src = '/fallback.jpg'; }}
-                  />
-                </div>
-                <p className="modal-desc">{selectedTreatment.description || 'No description found.'}</p>
-              </>
-            ) : (
-              <Empty description="Data not found" />
-            )}
-          </Modal>
-        </Content>
-      </Layout>
-
-      {/* Mobile Filters Drawer — use 'visible' for AntD v4 */}
-      <Drawer
-        title="Filters"
-        placement="right"
-        onClose={() => setDrawerOpen(false)}
-        visible={drawerOpen}
-        width={Math.min(window.innerWidth * 0.86, 360)}
-      >
-        {FiltersBlock}
-        <Space style={{ marginTop: 12 }}>
-          <Button onClick={clearAll} icon={<ReloadOutlined />}>Clear</Button>
-          <Button type="primary" onClick={() => setDrawerOpen(false)}>Apply</Button>
         </Space>
-      </Drawer>
+      ),
+    },
+    { title: 'Category', dataIndex: 'category', key: 'category', width: 180 },
+    {
+      title: '',
+      key: 'actions',
+      width: 220,
+      render: (_, r) => (
+        <Space>
+          <Button onClick={() => navigate(`/treatments/${r.id}`)}>View</Button>
+          <Button type="primary"  onClick={() => navigate('/quote')}>
+            Enquire
+          </Button>
+        </Space>
+      ),
+    },
+  ];
+
+  return (
+    <Layout className="tc-layout">
+      <Content className="tc-content">
+        {/* Header */}
+        <div className="tc-header">
+          <Breadcrumb>
+            <Breadcrumb.Item>
+              <Link to="/">Home</Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Item>Treatments</Breadcrumb.Item>
+          </Breadcrumb>
+
+          <div className="tc-headbar">
+            <div>
+              <h1 className="tc-h1">Treatments Catalog</h1>
+              <p className="tc-subhead">
+                Explore treatments and connect with hospitals instantly.
+              </p>
+            </div>
+            <Space size={24}>
+              <Statistic title="Total Treatments" value={data.length} />
+              <Statistic title="Showing" value={filtered.length} />
+            </Space>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <Card className="tc-toolbar" bodyStyle={{ padding: 12 }}>
+          <Row gutter={[12, 12]} align="middle">
+            <Col xs={24} md={10} lg={8}>
+              <Input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                prefix={<SearchOutlined />}
+                placeholder="Search treatments"
+                allowClear
+              />
+            </Col>
+            <Col xs={12} md={6} lg={6}>
+              <Select value={category} onChange={setCategory} style={{ width: '100%' }}>
+                {categories.map((c) => (
+                  <Option key={c} value={c}>
+                    {c}
+                  </Option>
+                ))}
+              </Select>
+            </Col>
+            <Col xs={12} md={6} lg={6}>
+              <Select value={sortBy} onChange={setSortBy} style={{ width: '100%' }}>
+                <Option value="a-z">Sort: A–Z</Option>
+                <Option value="z-a">Sort: Z–A</Option>
+              </Select>
+            </Col>
+            <Col xs={24} md={2} lg={4}>
+              <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+                <Tooltip title="Table">
+                  <Button
+                    type={view === 'table' ? 'primary' : 'default'}
+                    icon={<BarsOutlined />}
+                    onClick={() => setView('table')}
+                  />
+                </Tooltip>
+                <Tooltip title="Grid">
+                  <Button
+                    type={view === 'grid' ? 'primary' : 'default'}
+                    icon={<AppstoreOutlined />}
+                    onClick={() => setView('grid')}
+                  />
+                </Tooltip>
+                <Button onClick={clearFilters} icon={<ReloadOutlined />}>
+                  Reset
+                </Button>
+              </Space>
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Active filters */}
+        <div className="tc-active">
+          {category !== 'All' && (
+            <Tag closable onClose={(e) => (e.preventDefault(), setCategory('All'))}>
+              {category}
+            </Tag>
+          )}
+          {q && (
+            <Tag closable onClose={(e) => (e.preventDefault(), setQ(''))}>
+              Search: “{q}”
+            </Tag>
+          )}
+        </div>
+
+        <Divider style={{ margin: '12px 0 16px' }} />
+
+        {loading ? (
+          <Row gutter={[16, 16]}>
+            {Array.from({ length: 8 }).map((_, i) => (
+              <Col md={12} lg={12} key={i}>
+                <Card>
+                  <Skeleton active paragraph={{ rows: 2 }} />
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        ) : filtered.length === 0 ? (
+          <div className="tc-empty">
+            <Empty description="No treatments found. Adjust filters or search." />
+          </div>
+        ) : view === 'table' ? (
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={filtered}
+            pagination={{ pageSize: 10, showSizeChanger: true }}
+          />
+        ) : (
+          <Row gutter={[16, 16]}>
+            {filtered.map((t) => (
+              <Col xl={6} lg={8} md={12} key={t.id}>
+                <TreatmentCard t={t} onView={() => navigate(`/treatments/${t.id}`)} />
+              </Col>
+            ))}
+          </Row>
+        )}
+      </Content>
     </Layout>
   );
+}
+
+function TreatmentCard({ t, onView }) {
+  const src = cld(getImg(t), 'f_auto,q_auto,w_640,h_400,c_fill');
+  return (
+    <Card
+      className="tc-card"
+      hoverable
+      cover={
+        <img
+          src={src || '/fallback.jpg'}
+          alt={t.name}
+          onError={(e) => (e.currentTarget.src = '/fallback.jpg')}
+        />
+      }
+    >
+      <div className="tc-card-title">{t.name}</div>
+      <div className="tc-card-meta">
+        {t.category && <Tag>{t.category}</Tag>}
+      </div>
+      <div className="tc-card-desc">
+        {t.description ? truncate(t.description, 120) : '—'}
+      </div>
+      <Space style={{ marginTop: 10 }}>
+        <Button onClick={onView}>View</Button>
+        <Button type="primary"  onClick={() => navigate('/quote')}>
+          Enquire
+        </Button>
+      </Space>
+    </Card>
+  );
+}
+
+function truncate(str, n) {
+  if (!str) return '';
+  return str.length > n ? str.slice(0, n) + '…' : str;
 }

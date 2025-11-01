@@ -13,8 +13,8 @@ import AboutUsPage from './pages/AboutUsPage';
 import Header from './components/Header';
 import TreatmentsPage from './pages/TreatmentsPage';
 import GetQuotePage from './pages/GetQuotePage';
-import DoctorsPage from './pages/DoctorsPage';
 import BlogsPage from './pages/BlogsPage';
+import TreatmentDetails from './pages/TreatmentDetails';
 
 export default function App() {
   return (
@@ -35,6 +35,7 @@ export default function App() {
        
         <Route path="/admin"       element={<Admin />} />
           <Route path="/Treatments"       element={<TreatmentsPage />} />
+           <Route path="/treatments/:id" element={<TreatmentDetails />} />
       </Routes>
 
       <Footer />

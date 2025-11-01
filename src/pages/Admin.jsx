@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Tabs, Form, Input, Button, DatePicker, message, Table, Modal, Tag,
-  Popconfirm, Upload, Space, Drawer, Select, Divider, Typography, Card, Affix
+  Popconfirm, Upload, Space, Drawer, Select, Divider, Typography, Card, Affix, InputNumber
 } from 'antd';
 import {
   addDoc, collection, getDocs, updateDoc, deleteDoc, doc, writeBatch
@@ -10,7 +10,7 @@ import {
 import { db } from '../firebase';
 import {
   PlusOutlined, UploadOutlined, FileExcelOutlined, InboxOutlined,
-  SearchOutlined, DatabaseOutlined
+  SearchOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined
 } from '@ant-design/icons';
 import Papa from 'papaparse';
 import dayjs from 'dayjs';
@@ -32,11 +32,11 @@ async function uploadToCloudinary(file) {
   const url = `https://api.cloudinary.com/v1_1/${cloud}/image/upload`;
   const fd = new FormData();
   fd.append('file', file);
-  fd.append('upload_preset', preset); // unsigned preset, already scoped to your folder
+  fd.append('upload_preset', preset);
   const res = await fetch(url, { method: 'POST', body: fd });
   if (!res.ok) throw new Error('Cloudinary upload failed');
   const json = await res.json();
-  return json.secure_url; // canonical CDN URL
+  return json.secure_url;
 }
 
 function CloudinaryUploadButton({ onUploaded, children, size = 'small' }) {
@@ -57,7 +57,7 @@ function CloudinaryUploadButton({ onUploaded, children, size = 'small' }) {
       message.error('Upload failed');
     } finally {
       setLoading(false);
-      e.target.value = ''; // allow same file re-select
+      e.target.value = '';
     }
   };
 
@@ -89,6 +89,12 @@ export default function Admin() {
   const [inqLoading, setInqLoading] = useState(true);
   const [blogLoading, setBlogLoading] = useState(true);
 
+  // Edit modals
+  const [editHospital, setEditHospital] = useState(null);
+  const [editTreatment, setEditTreatment] = useState(null);
+  const [editDoctor, setEditDoctor] = useState(null);
+  const [editBlog, setEditBlog] = useState(null);
+
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [docModalVisible, setDocModalVisible] = useState(false);
 
@@ -108,11 +114,16 @@ export default function Admin() {
   const [parsedRows, setParsedRows] = useState([]);
   const [importValid, setImportValid] = useState(false);
 
-  // Forms (so we can programmatically set image URL after upload)
+  // Forms
   const [hospitalForm] = Form.useForm();
   const [treatmentForm] = Form.useForm();
   const [doctorForm] = Form.useForm();
   const [blogForm] = Form.useForm();
+
+  const [editHospitalForm] = Form.useForm();
+  const [editTreatmentForm] = Form.useForm();
+  const [editDoctorForm] = Form.useForm();
+  const [editBlogForm] = Form.useForm();
 
   /* ------------------------------ Data loading ----------------------------- */
   const loadCollection = async (col, setter, setLoadingFn) => {
@@ -158,9 +169,7 @@ export default function Admin() {
       clearFn && clearFn();
       await loadCollection(
         col,
-        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, inquiries: setInquiries, blogs: setBlogs }[
-          col
-        ],
+        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, inquiries: setInquiries, blogs: setBlogs }[col],
         col === 'inquiries' ? setInqLoading : col === 'blogs' ? setBlogLoading : setLoading
       );
     } catch (e) {
@@ -177,14 +186,18 @@ export default function Admin() {
       country: v.country,
       specialties: (v.specialties || '').split(',').map((s) => s.trim()).filter(Boolean),
       image: v.imageUrl
-    });
+    }, () => hospitalForm.resetFields());
 
   const onFinishTreatment = (v) =>
     submitToCollection('treatments', {
       name: v.name,
       description: v.description,
+      category: v.category || '',
+      keywords: v.keywords || '',
+      pricing: v.pricing || null,
+      duration: v.duration || '',
       image: v.imageUrl
-    });
+    }, () => treatmentForm.resetFields());
 
   const onFinishDoctor = (v) =>
     submitToCollection('doctors', {
@@ -193,7 +206,7 @@ export default function Admin() {
       specialty: (v.specialty || '').split(',').map((s) => s.trim()).filter(Boolean),
       bio: v.bio,
       image: v.imageUrl
-    });
+    }, () => doctorForm.resetFields());
 
   const onFinishBlog = (v) =>
     submitToCollection(
@@ -208,6 +221,82 @@ export default function Admin() {
       () => blogForm.resetFields()
     );
 
+  /* ----------------------------- Update records ---------------------------- */
+  const updateRecord = async (col, id, data, form, closeFn) => {
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, col, id), data);
+      message.success(`${col.slice(0, -1)} updated`);
+      closeFn();
+      form.resetFields();
+      await loadCollection(
+        col,
+        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, blogs: setBlogs }[col],
+        col === 'blogs' ? setBlogLoading : setLoading
+      );
+    } catch (e) {
+      console.error(e);
+      message.error(`Error updating ${col}`);
+    }
+    setLoading(false);
+  };
+
+  const onUpdateHospital = (v) =>
+    updateRecord('hospitals', editHospital.id, {
+      name: v.name,
+      city: v.city,
+      country: v.country,
+      specialties: (v.specialties || '').split(',').map((s) => s.trim()).filter(Boolean),
+      image: v.imageUrl
+    }, editHospitalForm, () => setEditHospital(null));
+
+  const onUpdateTreatment = (v) =>
+    updateRecord('treatments', editTreatment.id, {
+      name: v.name,
+      description: v.description,
+      category: v.category || '',
+      keywords: v.keywords || '',
+      pricing: v.pricing || null,
+      duration: v.duration || '',
+      image: v.imageUrl
+    }, editTreatmentForm, () => setEditTreatment(null));
+
+  const onUpdateDoctor = (v) =>
+    updateRecord('doctors', editDoctor.id, {
+      name: v.name,
+      hospital: v.hospital,
+      specialty: (v.specialty || '').split(',').map((s) => s.trim()).filter(Boolean),
+      bio: v.bio,
+      image: v.imageUrl
+    }, editDoctorForm, () => setEditDoctor(null));
+
+  const onUpdateBlog = (v) =>
+    updateRecord('blogs', editBlog.id, {
+      title: v.title,
+      excerpt: v.excerpt,
+      content: v.content,
+      imageUrl: v.imageUrl,
+      publishedDate: v.publishedDate?.toISOString?.() || editBlog.publishedDate
+    }, editBlogForm, () => setEditBlog(null));
+
+  /* ----------------------------- Delete records ---------------------------- */
+  const deleteRecord = async (col, id) => {
+    setLoading(true);
+    try {
+      await deleteDoc(doc(db, col, id));
+      message.success(`${col.slice(0, -1)} deleted`);
+      await loadCollection(
+        col,
+        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, blogs: setBlogs }[col],
+        col === 'blogs' ? setBlogLoading : setLoading
+      );
+    } catch (e) {
+      console.error(e);
+      message.error(`Error deleting ${col}`);
+    }
+    setLoading(false);
+  };
+
   /* ---------------------------- Inquiry updates ---------------------------- */
   const updateInquiryStatus = async (inq, status) => {
     await updateDoc(doc(db, 'inquiries', inq.id), { status });
@@ -220,7 +309,67 @@ export default function Admin() {
     loadCollection('inquiries', setInquiries, setInqLoading);
   };
 
+  /* ----------------------------- Edit handlers ---------------------------- */
+  const openEditHospital = (h) => {
+    setEditHospital(h);
+    editHospitalForm.setFieldsValue({
+      name: h.name,
+      city: h.city,
+      country: h.country,
+      specialties: (h.specialties || []).join(', '),
+      imageUrl: h.image
+    });
+  };
+
+  const openEditTreatment = (t) => {
+    setEditTreatment(t);
+    editTreatmentForm.setFieldsValue({
+      name: t.name,
+      description: t.description,
+      category: t.category,
+      keywords: t.keywords,
+      pricing: t.pricing,
+      duration: t.duration,
+      imageUrl: t.image
+    });
+  };
+
+  const openEditDoctor = (d) => {
+    setEditDoctor(d);
+    editDoctorForm.setFieldsValue({
+      name: d.name,
+      hospital: d.hospital,
+      specialty: (d.specialty || []).join(', '),
+      bio: d.bio,
+      imageUrl: d.image
+    });
+  };
+
+  const openEditBlog = (b) => {
+    setEditBlog(b);
+    editBlogForm.setFieldsValue({
+      title: b.title,
+      excerpt: b.excerpt,
+      content: b.content,
+      imageUrl: b.imageUrl,
+      publishedDate: b.publishedDate ? dayjs(b.publishedDate) : dayjs()
+    });
+  };
+
   /* -------------------------------- Tables -------------------------------- */
+  const actionButtons = (record, onEdit, onDelete) => (
+    <Space size="small">
+      <Button type="link" icon={<EditOutlined />} onClick={() => onEdit(record)}>
+        Edit
+      </Button>
+      <Popconfirm title="Delete this item?" onConfirm={() => onDelete(record.id)}>
+        <Button type="link" danger icon={<DeleteOutlined />}>
+          Delete
+        </Button>
+      </Popconfirm>
+    </Space>
+  );
+
   const withThumb = (cols) => [
     {
       title: '',
@@ -250,16 +399,30 @@ export default function Admin() {
     { title: 'Name', dataIndex: 'name', key: 'name' },
     { title: 'City', dataIndex: 'city', key: 'city' },
     { title: 'Country', dataIndex: 'country', key: 'country' },
-    { title: 'Specialties', dataIndex: 'specialties', key: 'specialties', render: (arr) => (arr || []).map(mkTag) }
+    { title: 'Specialties', dataIndex: 'specialties', key: 'specialties', render: (arr) => (arr || []).map(mkTag) },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 180,
+      render: (_, row) => actionButtons(row, openEditHospital, () => deleteRecord('hospitals', row.id))
+    }
   ]);
 
   const treatmentCols = withThumb([
     { title: 'Name', dataIndex: 'name', key: 'name' },
+    { title: 'Category', dataIndex: 'category', key: 'category' },
+    { title: 'Pricing', dataIndex: 'pricing', key: 'pricing', render: (p) => p ? `$${p}` : '-' },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
       render: (txt) => (txt || '').length > 60 ? (txt || '').slice(0, 60) + '…' : (txt || '')
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      width: 180,
+      render: (_, row) => actionButtons(row, openEditTreatment, () => deleteRecord('treatments', row.id))
     }
   ]);
 
@@ -270,11 +433,14 @@ export default function Admin() {
     {
       title: 'Actions',
       key: 'actions',
+      width: 200,
       render: (_, row) => (
         <Space size="small">
-          <Button type="link" onClick={() => showDoctorModal(row)}>
-            View
-          </Button>
+          <Button type="link" onClick={() => showDoctorModal(row)}>View</Button>
+          <Button type="link" icon={<EditOutlined />} onClick={() => openEditDoctor(row)}>Edit</Button>
+          <Popconfirm title="Delete?" onConfirm={() => deleteRecord('doctors', row.id)}>
+            <Button type="link" danger icon={<DeleteOutlined />}>Delete</Button>
+          </Popconfirm>
         </Space>
       )
     }
@@ -302,23 +468,15 @@ export default function Admin() {
       key: 'actions',
       render: (_, row) => (
         <Space size="small">
-          <Button type="link" onClick={() => showInquiryModal(row)}>
-            View
-          </Button>
+          <Button type="link" onClick={() => showInquiryModal(row)}>View</Button>
           {!['In Progress', 'Completed'].includes(row.status || '') && (
-            <Button type="link" onClick={() => updateInquiryStatus(row, 'In Progress')}>
-              Contact
-            </Button>
+            <Button type="link" onClick={() => updateInquiryStatus(row, 'In Progress')}>Contact</Button>
           )}
           {row.status === 'In Progress' && (
-            <Button type="link" onClick={() => updateInquiryStatus(row, 'Completed')}>
-              Complete
-            </Button>
+            <Button type="link" onClick={() => updateInquiryStatus(row, 'Completed')}>Complete</Button>
           )}
-          <Popconfirm title="Delete this inquiry?" onConfirm={() => deleteInquiry(row.id)}>
-            <Button type="link" danger>
-              Delete
-            </Button>
+          <Popconfirm title="Delete?" onConfirm={() => deleteInquiry(row.id)}>
+            <Button type="link" danger>Delete</Button>
           </Popconfirm>
         </Space>
       )
@@ -336,10 +494,15 @@ export default function Admin() {
     {
       title: 'Actions',
       key: 'actions',
+      width: 220,
       render: (_, row) => (
-        <Button type="link" onClick={() => showBlogModal(row)}>
-          View
-        </Button>
+        <Space size="small">
+          <Button type="link" onClick={() => showBlogModal(row)}>View</Button>
+          <Button type="link" icon={<EditOutlined />} onClick={() => openEditBlog(row)}>Edit</Button>
+          <Popconfirm title="Delete?" onConfirm={() => deleteRecord('blogs', row.id)}>
+            <Button type="link" danger icon={<DeleteOutlined />}>Delete</Button>
+          </Popconfirm>
+        </Space>
       )
     }
   ]);
@@ -349,7 +512,7 @@ export default function Admin() {
   const filterByQuery = (arr, keys) => (!q ? arr : arr.filter((r) => keys.some((k) => String(r[k] || '').toLowerCase().includes(q))));
 
   const hospitalsV = useMemo(() => filterByQuery(hospitals, ['name', 'city', 'country']), [hospitals, q]);
-  const treatmentsV = useMemo(() => filterByQuery(treatments, ['name', 'description']), [treatments, q]);
+  const treatmentsV = useMemo(() => filterByQuery(treatments, ['name', 'description', 'category']), [treatments, q]);
   const doctorsV = useMemo(() => filterByQuery(doctors, ['name', 'hospital']), [doctors, q]);
   const inquiriesV = useMemo(() => filterByQuery(inquiries, ['fullName', 'email', 'mobile', 'condition']), [inquiries, q]);
   const blogsV = useMemo(() => filterByQuery(blogs, ['title', 'excerpt', 'content']), [blogs, q]);
@@ -358,13 +521,13 @@ export default function Admin() {
   const templateFor = (col) => {
     switch (col) {
       case 'treatments':
-        return ['name', 'description', 'imageUrl'];
+        return ['name', 'description', 'category', 'keywords', 'pricing', 'duration', 'imageUrl'];
       case 'hospitals':
-        return ['name', 'city', 'country', 'specialties', 'image']; // specialties comma/semicolon separated
+        return ['name', 'city', 'country', 'specialties', 'image'];
       case 'doctors':
-        return ['name', 'hospital', 'specialty', 'bio', 'imageUrl']; // specialty comma/semicolon
+        return ['name', 'hospital', 'specialty', 'bio', 'imageUrl'];
       case 'blogs':
-        return ['title', 'excerpt', 'content', 'imageUrl', 'publishedDate']; // date ISO or DD/MM/YYYY
+        return ['title', 'excerpt', 'content', 'imageUrl', 'publishedDate'];
       default:
         return [];
     }
@@ -393,7 +556,7 @@ export default function Admin() {
         if (!ok) message.warning(`Missing columns. Required: ${need.join(', ')}`);
       }
     });
-    return false; // prevent auto upload
+    return false;
   };
 
   const doImport = async () => {
@@ -411,21 +574,18 @@ export default function Admin() {
 
         if (importCollection === 'hospitals') {
           if (row.specialties)
-            row.specialties = row.specialties
-              .split(/[,;]+/)
-              .map((s) => s.trim())
-              .filter(Boolean);
+            row.specialties = row.specialties.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
           if (row.imageUrl && !row.image) {
             row.image = row.imageUrl;
             delete row.imageUrl;
           }
         }
+        if (importCollection === 'treatments') {
+          if (row.pricing) row.pricing = parseFloat(row.pricing) || null;
+        }
         if (importCollection === 'doctors') {
           if (row.specialty)
-            row.specialty = row.specialty
-              .split(/[,;]+/)
-              .map((s) => s.trim())
-              .filter(Boolean);
+            row.specialty = row.specialty.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
         }
         if (importCollection === 'blogs') {
           if (row.publishedDate) {
@@ -478,7 +638,7 @@ export default function Admin() {
                 className="topbar-search"
               />
               <Button icon={<FileExcelOutlined />} onClick={() => setImportOpen(true)}>
-                Bulk Import (CSV)
+                Bulk Import
               </Button>
             </div>
           </div>
@@ -489,6 +649,7 @@ export default function Admin() {
             {/* Hospitals */}
             <TabPane tab="Hospitals" key="hospitals">
               <Card className="panel">
+                <Typography.Title level={4}>Add Hospital</Typography.Title>
                 <Form form={hospitalForm} layout="vertical" onFinish={onFinishHospital}>
                   <Form.Item name="name" label="Name" rules={[{ required: true }]}>
                     <Input />
@@ -506,9 +667,7 @@ export default function Admin() {
                     <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
                   </Form.Item>
                   <Form.Item>
-                    <CloudinaryUploadButton
-                      onUploaded={(url) => hospitalForm.setFieldsValue({ imageUrl: url })}
-                    >
+                    <CloudinaryUploadButton onUploaded={(url) => hospitalForm.setFieldsValue({ imageUrl: url })}>
                       Upload Image
                     </CloudinaryUploadButton>
                   </Form.Item>
@@ -534,20 +693,31 @@ export default function Admin() {
             {/* Treatments */}
             <TabPane tab="Treatments" key="treatments">
               <Card className="panel">
+                <Typography.Title level={4}>Add Treatment</Typography.Title>
                 <Form form={treatmentForm} layout="vertical" onFinish={onFinishTreatment}>
                   <Form.Item name="name" label="Name" rules={[{ required: true }]}>
                     <Input />
                   </Form.Item>
+                  <Form.Item name="category" label="Category">
+                    <Input placeholder="e.g., Cardiology, Orthopedics" />
+                  </Form.Item>
                   <Form.Item name="description" label="Description">
                     <TextArea rows={3} />
+                  </Form.Item>
+                  <Form.Item name="keywords" label="Keywords" extra="Comma-separated for search">
+                    <Input placeholder="surgery, heart, bypass" />
+                  </Form.Item>
+                  <Form.Item name="pricing" label="Pricing (USD)">
+                    <InputNumber min={0} style={{ width: '100%' }} placeholder="5000" />
+                  </Form.Item>
+                  <Form.Item name="duration" label="Duration">
+                    <Input placeholder="e.g., 2-3 hours, 1 week recovery" />
                   </Form.Item>
                   <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
                     <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
                   </Form.Item>
                   <Form.Item>
-                    <CloudinaryUploadButton
-                      onUploaded={(url) => treatmentForm.setFieldsValue({ imageUrl: url })}
-                    >
+                    <CloudinaryUploadButton onUploaded={(url) => treatmentForm.setFieldsValue({ imageUrl: url })}>
                       Upload Image
                     </CloudinaryUploadButton>
                   </Form.Item>
@@ -573,6 +743,7 @@ export default function Admin() {
             {/* Doctors */}
             <TabPane tab="Doctors" key="doctors">
               <Card className="panel">
+                <Typography.Title level={4}>Add Doctor</Typography.Title>
                 <Form form={doctorForm} layout="vertical" onFinish={onFinishDoctor}>
                   <Form.Item name="name" label="Name" rules={[{ required: true }]}>
                     <Input placeholder="Dr. Smith" />
@@ -590,9 +761,7 @@ export default function Admin() {
                     <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
                   </Form.Item>
                   <Form.Item>
-                    <CloudinaryUploadButton
-                      onUploaded={(url) => doctorForm.setFieldsValue({ imageUrl: url })}
-                    >
+                    <CloudinaryUploadButton onUploaded={(url) => doctorForm.setFieldsValue({ imageUrl: url })}>
                       Upload Image
                     </CloudinaryUploadButton>
                   </Form.Item>
@@ -663,6 +832,7 @@ export default function Admin() {
             {/* Blogs */}
             <TabPane tab="Blogs" key="blogs">
               <Card className="panel">
+                <Typography.Title level={4}>Add Blog Post</Typography.Title>
                 <Form form={blogForm} layout="vertical" onFinish={onFinishBlog}>
                   <Form.Item name="title" label="Title" rules={[{ required: true }]}>
                     <Input />
@@ -677,9 +847,7 @@ export default function Admin() {
                     <Input placeholder="https://res.cloudinary.com/.../cover.jpg" />
                   </Form.Item>
                   <Form.Item>
-                    <CloudinaryUploadButton
-                      onUploaded={(url) => blogForm.setFieldsValue({ imageUrl: url })}
-                    >
+                    <CloudinaryUploadButton onUploaded={(url) => blogForm.setFieldsValue({ imageUrl: url })}>
                       Upload Cover
                     </CloudinaryUploadButton>
                   </Form.Item>
@@ -732,8 +900,173 @@ export default function Admin() {
             </TabPane>
           </Tabs>
         </div>
-
       </div>
+
+      {/* Edit Hospital Modal */}
+      <Modal
+        title="Edit Hospital"
+        open={!!editHospital}
+        onCancel={() => setEditHospital(null)}
+        footer={null}
+        width={600}
+      >
+        <Form form={editHospitalForm} layout="vertical" onFinish={onUpdateHospital}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="city" label="City" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="country" label="Country" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="specialties" label="Specialties" extra="Comma-separate">
+            <Input />
+          </Form.Item>
+          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
+            <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
+          </Form.Item>
+          <Form.Item>
+            <CloudinaryUploadButton onUploaded={(url) => editHospitalForm.setFieldsValue({ imageUrl: url })}>
+              Upload Image
+            </CloudinaryUploadButton>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Update Hospital
+              </Button>
+              <Button onClick={() => setEditHospital(null)}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Edit Treatment Modal */}
+      <Modal
+        title="Edit Treatment"
+        open={!!editTreatment}
+        onCancel={() => setEditTreatment(null)}
+        footer={null}
+        width={600}
+      >
+        <Form form={editTreatmentForm} layout="vertical" onFinish={onUpdateTreatment}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="category" label="Category">
+            <Input placeholder="e.g., Cardiology, Orthopedics" />
+          </Form.Item>
+          <Form.Item name="description" label="Description">
+            <TextArea rows={3} />
+          </Form.Item>
+          <Form.Item name="keywords" label="Keywords" extra="Comma-separated for search">
+            <Input placeholder="surgery, heart, bypass" />
+          </Form.Item>
+          <Form.Item name="pricing" label="Pricing (USD)">
+            <InputNumber min={0} style={{ width: '100%' }} placeholder="5000" />
+          </Form.Item>
+          <Form.Item name="duration" label="Duration">
+            <Input placeholder="e.g., 2-3 hours, 1 week recovery" />
+          </Form.Item>
+          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
+            <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
+          </Form.Item>
+          <Form.Item>
+            <CloudinaryUploadButton onUploaded={(url) => editTreatmentForm.setFieldsValue({ imageUrl: url })}>
+              Upload Image
+            </CloudinaryUploadButton>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Update Treatment
+              </Button>
+              <Button onClick={() => setEditTreatment(null)}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Edit Doctor Modal */}
+      <Modal
+        title="Edit Doctor"
+        open={!!editDoctor}
+        onCancel={() => setEditDoctor(null)}
+        footer={null}
+        width={600}
+      >
+        <Form form={editDoctorForm} layout="vertical" onFinish={onUpdateDoctor}>
+          <Form.Item name="name" label="Name" rules={[{ required: true }]}>
+            <Input placeholder="Dr. Smith" />
+          </Form.Item>
+          <Form.Item name="hospital" label="Hospital" rules={[{ required: true }]}>
+            <Input placeholder="Apollo Hospital" />
+          </Form.Item>
+          <Form.Item name="specialty" label="Specialty" extra="Comma-separate">
+            <Input />
+          </Form.Item>
+          <Form.Item name="bio" label="Bio">
+            <TextArea rows={2} />
+          </Form.Item>
+          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
+            <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
+          </Form.Item>
+          <Form.Item>
+            <CloudinaryUploadButton onUploaded={(url) => editDoctorForm.setFieldsValue({ imageUrl: url })}>
+              Upload Image
+            </CloudinaryUploadButton>
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Update Doctor
+              </Button>
+              <Button onClick={() => setEditDoctor(null)}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Edit Blog Modal */}
+      <Modal
+        title="Edit Blog Post"
+        open={!!editBlog}
+        onCancel={() => setEditBlog(null)}
+        footer={null}
+        width={700}
+      >
+        <Form form={editBlogForm} layout="vertical" onFinish={onUpdateBlog}>
+          <Form.Item name="title" label="Title" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="excerpt" label="Excerpt" rules={[{ required: true }]}>
+            <TextArea rows={2} />
+          </Form.Item>
+          <Form.Item name="content" label="Content" rules={[{ required: true }]}>
+            <TextArea rows={6} />
+          </Form.Item>
+          <Form.Item name="imageUrl" label="Cover Image URL" rules={[{ required: true }]}>
+            <Input placeholder="https://res.cloudinary.com/.../cover.jpg" />
+          </Form.Item>
+          <Form.Item>
+            <CloudinaryUploadButton onUploaded={(url) => editBlogForm.setFieldsValue({ imageUrl: url })}>
+              Upload Cover
+            </CloudinaryUploadButton>
+          </Form.Item>
+          <Form.Item name="publishedDate" label="Publish Date" rules={[{ required: true }]}>
+            <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item>
+            <Space>
+              <Button type="primary" htmlType="submit" loading={loading}>
+                Update Blog Post
+              </Button>
+              <Button onClick={() => setEditBlog(null)}>Cancel</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
 
       {/* Bulk Import Drawer */}
       <Drawer
@@ -778,7 +1111,7 @@ export default function Admin() {
               <InboxOutlined />
             </p>
             <p className="ant-upload-text">Click or drag CSV file here to upload</p>
-            <p className="ant-upload-hint">We’ll parse and show a preview before import.</p>
+            <p className="ant-upload-hint">We'll parse and show a preview before import.</p>
           </Dragger>
 
           {parsedRows.length > 0 && (
@@ -798,7 +1131,7 @@ export default function Admin() {
               </div>
 
               <Button type="primary" block disabled={!importValid} onClick={doImport} icon={<UploadOutlined />}>
-                Import {parsedRows.length} to “{importCollection}”
+                Import {parsedRows.length} to "{importCollection}"
               </Button>
             </>
           )}
