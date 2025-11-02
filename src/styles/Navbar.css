@@ -4,39 +4,39 @@
   display: flex;
   justify-content: center;
   background: transparent;
-  padding: 16px 0;
+  padding: 10px 0;
 }
 
 .navbar-inner {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   background-color: #ffffff;
   border: 1px solid #00000020;
-  padding: 0 24px;
+  padding: 0 20px;
   height: 56px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  width: 100%;
+  max-width: 1200px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   font-family: 'Poppins', sans-serif;
 }
 
-/* icon logo */
 .navbar-logo {
-  font-size: 1.6rem;            /* controls <HospitalOutlined> size */
+  font-size: 1.6rem;
   color: #333;
-  margin-right: 32px;
-  display: flex;
-  align-items: center;
+  cursor: pointer;
 }
 
-/* menu */
+/* desktop menu */
+.desktop-menu {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+}
+
 .navbar-menu {
   background: transparent;
   border-bottom: none;
-  white-space: nowrap;
-  overflow: visible;
-}
-
-.navbar-menu .ant-menu {
-  display: inline-flex !important;
 }
 
 .navbar-menu .ant-menu-item {
@@ -46,29 +46,46 @@
 }
 
 .navbar-menu .ant-menu-item:hover {
-  color: #7589D2;
+  color: #17b3ad;
 }
 
-/* separator */
-.navbar-divider {
-  width: 1px;
-  height: 24px;
-  background-color: rgba(0, 0, 0, 0.15);
-  margin: 0 16px;
-  align-self: center;
-}
-
-/* get quote */
+/* Get Quote button */
 .get-quote-btn {
-  padding: 0 20px;
-  height: 36px;
-  background-color: #ffffff;
+  background-color: #17b3ad;
   border: none;
+  color: white;
   font-weight: 600;
-  color: #000;
 }
 
 .get-quote-btn:hover {
-  background-color: #A9D9A0;
+  background-color: #13a19d;
   color: #fff;
+}
+
+/* hamburger toggle */
+.menu-toggle {
+  display: none;
+  font-size: 1.4rem;
+  margin-left: 10px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .desktop-menu {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .get-quote-btn {
+    display: none;
+  }
+
+  .navbar-inner {
+    padding: 0 16px;
+  }
 }
