@@ -1,63 +1,193 @@
-/* --- Multi-step form layout --- */
-.form-steps-wrap {
-  padding: 0 18px 6px;
+/* =========================================================
+   Global font + palette (GREEN + WHITE only)
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
+
+:root{
+  --ink:#0f172a;                  /* near-black text */
+  --muted:#475569;                /* neutral subtext */
+  --stroke:rgba(2,6,23,.08);      /* soft border */
+  --brand:#16a34a;                /* green 600 */
+  --brand-700:#15803d;            /* green 700 */
+  --brand-50:#f0fdf4;             /* green tint */
+  --shadow-sm:0 8px 24px rgba(2,6,23,.06);
+  --shadow-lg:0 24px 64px rgba(2,6,23,.10);
+  --radius-card:16px;
+  --radius-sm:10px;
 }
 
-.form-body {
-  padding: 8px 18px 18px;
+html, body, #root{ font-family:'Poppins',sans-serif; }
+
+/* =========================================================
+   Section layout
+   ========================================================= */
+.hero-new{
+  background:#ffffff;
+  padding: clamp(48px, 6vw, 96px) 16px;
 }
 
-/* Keep card steady height across steps */
-.form-card {
-  min-height: 520px;              /* keeps height consistent */
-  display: flex;
-  flex-direction: column;
-}
-.form-body .form-step {
-  display: grid;
-  gap: 12px;
+.hero-shell{
+  max-width:1160px;
+  margin:0 auto;
+  display:grid;
+  grid-template-columns: 1.2fr 1fr;   /* left copy / right form */
+  gap: clamp(20px, 4vw, 56px);
+  align-items:start;
 }
 
-/* Controls */
-.form-controls {
-  margin-top: auto;
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 0 18px 18px;
+/* =========================================================
+   LEFT: Copy + CTAs
+   ========================================================= */
+.tag{
+  display:inline-block;
+  font-size:.85rem;
+  font-weight:700;
+  color:var(--brand);
+  background:var(--brand-50);
+  border:1px solid #dcfce7;
+  padding:6px 10px;
+  border-radius:999px;
+  margin-bottom:12px;
 }
-.btn-prev {
-  background: #fff;
-  border: 1px solid var(--stroke);
-  border-radius: 10px;
-  height: 42px;
-  padding: 0 16px;
-  font-weight: 600;
+
+.hero-title{
+  font-size:clamp(2.1rem, 5vw, 3.4rem);
+  line-height:1.08;
+  font-weight:800;
+  color:var(--ink);
+  letter-spacing:-0.02em;
+  margin:6px 0 10px;
 }
-.btn-next {
-  background: var(--brand);
-  border-color: var(--brand);
-  height: 42px;
-  padding: 0 18px;
-  border-radius: 10px;
-  font-weight: 700;
+.hero-title span{ color:var(--brand-700); }
+
+.hero-sub{
+  color:var(--muted);
+  font-size:clamp(1rem, 1.4vw, 1.15rem);
+  margin-bottom:18px;
 }
-.btn-next:hover { background: var(--brand-700) !important; border-color: var(--brand-700) !important; }
+
+.cta-row{
+  display:flex; flex-wrap:wrap; gap:12px; margin-bottom:18px;
+}
+.cta-primary{
+  background:var(--brand); border-color:var(--brand); font-weight:700;
+}
+.cta-primary:hover{
+  background:var(--brand-700)!important; border-color:var(--brand-700)!important;
+}
+.cta-secondary{
+  background:#fff; border:1px solid var(--stroke); font-weight:700;
+}
+.cta-secondary:hover{ border-color:#cbd5e1; }
+
+.meta{
+  display:flex; gap:22px; padding:0; margin:8px 0 0; list-style:none; color:#64748b; flex-wrap:wrap;
+}
+.meta strong{ color:var(--ink); }
+
+/* =========================================================
+   RIGHT: Multi-step Form Card
+   ========================================================= */
+.hero-form{ width:100%; }
+
+.form-card{
+  position:relative;
+  background:#fff;
+  border:1px solid var(--stroke);
+  border-radius:var(--radius-card);
+  box-shadow:var(--shadow-lg);
+  overflow:hidden;
+  min-height:520px;               /* keeps consistent height across steps */
+  display:flex;
+  flex-direction:column;
+}
+
+/* unique accent: slim green bar on top */
+.form-card::before{
+  content:"";
+  display:block;
+  height:4px; width:100%;
+  background:var(--brand);
+}
+
+.form-head{
+  padding:18px 18px 8px;
+}
+.form-head h3{
+  margin:0 0 6px; font-weight:800; color:var(--ink); font-size:1.25rem;
+}
+.form-head p{
+  margin:0; color:#667085; font-size:.96rem;
+}
+
+/* Steps */
+.form-steps-wrap{ padding:0 18px 6px; }
+.ant-steps-item-title{ font-weight:600; }
+.ant-steps-item-process .ant-steps-item-icon{ border-color:var(--brand); }
+.ant-steps-item-process .ant-steps-icon{ color:var(--brand); }
+.ant-steps-item-process .ant-steps-item-icon > .ant-steps-icon{ color:#fff; }
+
+/* Form body */
+.form-body{ padding:8px 18px 18px; }
+.form-body .form-step{ display:grid; gap:12px; }
+
+/* Rounded inputs/selects consistently */
+.form-body .ant-input,
+.form-body .ant-input-affix-wrapper,
+.form-body .ant-select-selector,
+.form-body .ant-picker,
+.form-body .ant-upload{
+  border-radius:var(--radius-sm) !important;
+}
+
+/* Upload (Dragger) fine-tune spacing */
+.form-body .ant-upload.ant-upload-drag{
+  padding:18px;
+}
+
+/* Controls (Back/Next/Submit) pinned to bottom) */
+.form-controls{
+  margin-top:auto;
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:0 18px 18px;
+}
+.btn-prev{
+  background:#fff; border:1px solid var(--stroke);
+  border-radius:var(--radius-sm); height:42px; padding:0 16px; font-weight:600;
+}
+.btn-next{
+  background:var(--brand); border-color:var(--brand);
+  border-radius:var(--radius-sm); height:42px; padding:0 18px; font-weight:700;
+}
+.btn-next:hover{
+  background:var(--brand-700)!important; border-color:var(--brand-700)!important;
+}
 
 /* Captcha */
-.captcha-wrap {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 4px;
+.captcha-wrap{ display:flex; justify-content:center; padding:8px 0 4px; }
+
+/* =========================================================
+   Responsive polish
+   ========================================================= */
+@media (max-width: 980px){
+  .hero-shell{ grid-template-columns:1fr; }
+  .hero-form{ order:2; }              /* copy first, form below */
 }
 
-/* Responsiveness */
-@media (max-width: 980px) {
-  .hero-shell { grid-template-columns: 1fr; }
-  .hero-form { order: 2; }
+@media (max-width: 560px){
+  .hero-new{ padding:36px 14px; }
+  .cta-row{ gap:10px; }
+  .cta-primary, .cta-secondary{ width:100%; height:44px; border-radius:var(--radius-sm); }
+  .form-card{ border-radius:14px; min-height:540px; }
+  .btn-prev, .btn-next{ width:48%; }
 }
 
-@media (max-width: 560px) {
-  .form-card { border-radius: 14px; min-height: 540px; }
-  .btn-prev, .btn-next { width: 48%; }
+/* iOS notch safe area */
+@supports (padding: max(0px)){
+  .hero-new{
+    padding-left: max(16px, env(safe-area-inset-left));
+    padding-right: max(16px, env(safe-area-inset-right));
+  }
 }
