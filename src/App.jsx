@@ -21,7 +21,7 @@ export default function App() {
     <BrowserRouter>
 
       <Navbar />
-<Header/>
+
       <Routes>
         <Route path="/"            element={<Home />} />
         <Route path="/contact"     element={<Home scrollTo="contact" />} />

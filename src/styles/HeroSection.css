@@ -1,118 +1,131 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
 
-.hero-section {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  align-items: start;
-  gap: 40px;
-  padding: 80px 20px;
-  background: #f9fafb;            /* very light gray */
-  position: relative;
-  font-family: 'Poppins', sans-serif;
-}
-
-/* subtle background blobs */
-.hero-section::before,
-.hero-section::after {
-  content: '';
-  position: absolute;
-  border-radius: 50%;
-  background: #e2f5e9;  /* pale mint */
-  opacity: 0.6;
-}
-.hero-section::before {
-  width: 400px; height: 400px;
-  top: -100px; left: -100px;
-}
-.hero-section::after {
-  width: 300px; height: 300px;
-  bottom: -80px; right: -60px;
+/* Green + white only */
+:root{
+  --bg:#ffffff;
+  --ink:#0f172a;
+  --muted:#475569;
+  --stroke:rgba(2,6,23,.08);
+  --brand:#16a34a;
+  --brand-700:#15803d;
+  --brand-50:#f0fdf4;
+  --shadow-sm:0 8px 24px rgba(2,6,23,.06);
+  --shadow-lg:0 24px 64px rgba(2,6,23,.10);
 }
 
-/* —— HERO INTRO —— */
-.hero-intro {
-  position: relative;
-  z-index: 1;
-  padding: 20px;
+html, body, #root { font-family:'Poppins', sans-serif; }  /* ✅ enforce Poppins */
+
+.hero.minimal-hero{
+  background: var(--bg);
+  padding: 64px 16px;
 }
-.intro-title {
-  font-size: 2.5rem;
-  font-weight: 800;
-  color: #1a2a3a;
-  margin-bottom: 16px;
-  line-height: 1.2;
+@media (min-width:1024px){ .hero.minimal-hero{ padding: 96px 24px; } }
+
+.hero-wrap{ max-width:960px; margin:0 auto; }
+
+.eyebrow{
+  display:inline-block; font-size:.85rem; font-weight:700;
+  color:var(--brand); background:var(--brand-50);
+  border:1px solid #dcfce7; padding:6px 10px; border-radius:999px; margin-bottom:14px;
 }
-.intro-subtitle {
-  font-size: 1rem;
-  color: #475467;
-  margin-bottom: 24px;
-}
-.intro-search {
-  max-width: 500px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+.h-title{ font-size:clamp(2rem,5vw,3.2rem); line-height:1.1; font-weight:800; color:var(--ink); margin:6px 0 10px; }
+.h-sub{ color:var(--muted); font-size:clamp(1rem,1.6vw,1.125rem); margin-bottom:18px; }
+
+/* Search (icon alignment + padding fixed) */
+/* Constrain the search bar width to hero text */
+.h-search {
+  background: #fff;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  width: 100%;
+  max-width: 560px;       /* 🔹 matches typical hero text width */
+  margin-top: 8px;
 }
 
-/* —— INQUIRY FORM —— */
-.hero-inquiry {
-  background: #ffffff;
-  padding: 32px;
-  border-radius: 16px;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.1);
-  position: relative;
-  z-index: 2;
-  min-width: 300px;
+/* Center horizontally under hero title */
+.hero-wrap .h-search {
+  margin-left: 0;
 }
-.inquiry-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #1a2a3a;
-  text-align: center;
-  margin-bottom: 24px;
-}
-.inquiry-form .ant-form-item-label > label {
-  color: #1a2a3a;
-  font-weight: 500;
-}
-.inquiry-row {
+
+/* Input wrapper — fix alignment and height */
+.search-input.ant-input-affix-wrapper {
   display: flex;
-  gap: 16px;
-}
-.inquiry-col {
-  flex: 1;
-}
-
-/* rounded inputs */
-.inquiry-form .ant-input,
-.inquiry-form .ant-input-affix-wrapper,
-.inquiry-form .ant-select-selector,
-.inquiry-form .ant-picker,
-.inquiry-form .ant-upload {
-  border-radius: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  height: 50px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  padding: 0 14px !important;
+  box-shadow: none !important;
+  background: #fff;
 }
 
-/* submit */
-.inquiry-submit {
-  background-color: #197f3d;       /* fresh green accent */
-  border-color: #197f3d;
-  font-weight: 600;
-  border-radius: 8px;
-}
-.inquiry-submit:hover,
-.inquiry-submit:focus {
-  background-color: #145a2a;
-  border-color: #145a2a;
+/* Text and icon alignment */
+.search-input input {
+  height: 100%;
+  font-size: 15px;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  align-items: center;
+  padding-top: 2px !important;   /* 🔹 nudges text slightly upward */
 }
 
-/* RESPONSIVE: stack on mobile */
-@media (max-width: 700px) {
-  .hero-section {
-    padding: 60px 16px;
-  }
-  .inquiry-row {
-    flex-direction: column;
-  }
-  .intro-search {
-    width: 100%;
+/* Perfect vertical centering + slight upward shift for icon */
+.search-icon {
+  font-size: 17px;
+  color: #94a3b8;
+  margin-right: 10px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  top: -1px;                    /* 🔹 raises icon 1px for visual balance */
+}
+
+/* Responsive: full width on smaller screens */
+@media (max-width: 600px) {
+  .h-search {
+    max-width: 100%;
   }
 }
+
+.autocomplete .ant-select-selector{ border-radius:12px !important; }
+
+/* Dropdown options */
+.opt-row{ display:flex; gap:10px; }
+.opt-type{ font-size:12px; font-weight:700; text-transform:uppercase; color:#64748b; }
+.opt-name{ color:#0f172a; }
+
+/* Quick picks (no doctor names) */
+.quick{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.quick-chip{ border-radius:999px; padding:4px 10px; cursor:pointer; background:#f1f5f9; border-color:#e2e8f0; color:#0f172a; }
+.quick-chip:hover{ background:#e2e8f0; }
+
+/* CTAs */
+.cta{ display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; }
+.btn-primary{ background:var(--brand); border-color:var(--brand); font-weight:700; }
+.btn-primary:hover{ background:var(--brand-700)!important; border-color:var(--brand-700)!important; }
+.btn-ghost{ background:#fff; border:1px solid var(--stroke); font-weight:700; }
+.btn-ghost:hover{ border-color:#cbd5e1; }
+
+/* 3-step strip (light, fills space, still minimal) */
+.steps{
+  display:grid; grid-template-columns:1fr; gap:10px; margin-top:18px;
+}
+@media (min-width:680px){ .steps{ grid-template-columns:1fr 1fr 1fr; } }
+.step{
+  display:flex; align-items:center; gap:10px; background:#fff;
+  border:1px solid var(--stroke); border-radius:12px; padding:12px 14px; box-shadow:var(--shadow-sm);
+}
+.step .anticon{ font-size:18px; color:var(--brand); }
+.step strong{ display:block; line-height:1.1; color:var(--ink); }
+.step span{ color:#64748b; font-size:.9rem; }
+
+/* Mobile polish */
+@media (max-width:560px){
+  .hero.minimal-hero{ padding:48px 14px; }
+  .search-input{ height:48px; }
+}
+
+
