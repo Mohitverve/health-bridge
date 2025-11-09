@@ -33,7 +33,6 @@ function cld(url, t = "f_auto,q_auto") {
     ? url.replace("/upload/", `/upload/${t}/`)
     : url;
 }
-const getImg = (o) => o?.imageUrl || o?.image || "";
 
 export default function TreatmentsPage() {
   const [data, setData] = useState([]);
@@ -46,12 +45,22 @@ export default function TreatmentsPage() {
 
   const navigate = useNavigate();
 
+  // Fetch + normalize
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         const snap = await getDocs(collection(db, "treatments"));
-        const items = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const items = snap.docs.map((d) => {
+          const raw = { id: d.id, ...d.data() };
+          return {
+            id: raw.id,
+            title: raw.title || raw.name || "Untitled Treatment",
+            imageUrl: raw.imageUrl || raw.image || "",
+            description: raw.description || "",
+            category: raw.category || "",
+          };
+        });
         setData(items);
       } catch (e) {
         console.error("Fetch treatments failed", e);
@@ -72,17 +81,18 @@ export default function TreatmentsPage() {
     let arr = data.filter((t) => {
       if (category !== "All" && t.category !== category) return false;
       if (!normalized) return true;
-      const hay = `${t.name || ""} ${t.description || ""} ${t.keywords || ""}`.toLowerCase();
+      const hay = `${t.title || ""} ${t.description || ""}`.toLowerCase();
       return hay.includes(normalized);
     });
 
     arr = arr.sort((a, b) => {
-      const an = (a.name || "").toLowerCase();
-      const bn = (b.name || "").toLowerCase();
+      const an = (a.title || "").toLowerCase();
+      const bn = (b.title || "").toLowerCase();
       if (sortBy === "a-z") return an.localeCompare(bn);
       if (sortBy === "z-a") return bn.localeCompare(an);
       return 0;
     });
+
     return arr;
   }, [data, category, normalized, sortBy]);
 
@@ -118,7 +128,7 @@ export default function TreatmentsPage() {
           </div>
         </div>
 
-        {/* Sticky toolbar (grid-only) */}
+        {/* Toolbar */}
         <section className="tp-toolbar" role="region" aria-label="Filters">
           <div className="tp-tool-row">
             <Input
@@ -173,13 +183,13 @@ export default function TreatmentsPage() {
           </div>
         </section>
 
-        {/* GRID VIEW ONLY */}
+        {/* Grid */}
         {loading ? (
           <Row gutter={[16, 16]}>
             {Array.from({ length: 8 }).map((_, i) => (
               <Col xs={24} sm={12} md={12} lg={8} xl={6} key={i}>
                 <Card className="tp-card">
-                  <Skeleton active paragraph={{ rows: 2 }} />
+                  <Skeleton active paragraph={{ rows: 3 }} />
                 </Card>
               </Col>
             ))}
@@ -195,7 +205,7 @@ export default function TreatmentsPage() {
                 <TreatmentCard
                   t={t}
                   onView={() => navigate(`/treatments/${t.id}`)}
-                  onEnquire={() => navigate("/quote")}
+                  onEnquire={() => navigate("/Quote")}
                 />
               </Col>
             ))}
@@ -207,38 +217,39 @@ export default function TreatmentsPage() {
 }
 
 function TreatmentCard({ t, onView, onEnquire }) {
-  const src = cld(getImg(t), "f_auto,q_auto,w_640,h_420,c_fill");
+  // small square thumbnail (badge style)
+  const thumb = cld(t.imageUrl, "f_auto,q_auto,w_120,h_120,c_thumb,g_face");
+
   return (
-    <Card
-      className="tp-card"
-      hoverable
-      cover={
-        <img
-          src={src || "/fallback.jpg"}
-          alt={t.name}
-          onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
-          className="tp-card-img"
-        />
-      }
-    >
-      <div className="tp-card-title">{t.name}</div>
-      <div className="tp-card-meta">
-        {t.category && <Tag className="tp-chip">{t.category}</Tag>}
+    <Card className="tp-card" hoverable>
+      <div className="tp-card-inner">
+        {/* tiny image badge */}
+        <div className="tp-thumb">
+          <img
+            src={thumb || "/fallback.jpg"}
+            alt={t.title}
+            onError={(e) => (e.currentTarget.src = "/fallback.jpg")}
+          />
+        </div>
+
+        {/* title + desc */}
+        <div className="tp-card-title">{t.title}</div>
+        {t.description && (
+          <p className="tp-card-desc">
+            {t.description.length > 180 ? t.description.slice(0, 177) + "…" : t.description}
+          </p>
+        )}
+
+        {/* actions */}
+        <div className="tp-actions">
+          <Button type="primary" className="tp-cta" onClick={onEnquire}>
+            Enquire
+          </Button>
+          <Button className="tp-ghost" icon={<ArrowRightOutlined />} onClick={onView}>
+            Read More
+          </Button>
+        </div>
       </div>
-      <div className="tp-card-desc">
-        {t.description ? truncate(t.description, 120) : "—"}
-      </div>
-      <Space style={{ marginTop: 10 }}>
-        <Button onClick={onView}>View</Button>
-        <Button type="primary" className="tp-cta" icon={<ArrowRightOutlined />} onClick={onEnquire}>
-          Enquire
-        </Button>
-      </Space>
     </Card>
   );
-}
-
-function truncate(str, n) {
-  if (!str) return "";
-  return str.length > n ? str.slice(0, n) + "…" : str;
 }

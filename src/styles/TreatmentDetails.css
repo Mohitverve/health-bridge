@@ -24,9 +24,9 @@
 .td2-title{ margin:0 !important; font-size:36px !important; font-weight:800 !important; color:var(--td-text) !important; line-height:1.2 !important; }
 .td2-kicker{ margin-top:6px; font-size:20px; font-weight:600; color:var(--td-muted); }
 
-/* hero image */
-.td2-hero{ margin:20px 0 8px; border-radius:16px; overflow:hidden; border:1px solid var(--td-border); }
-.td2-hero img{ width:100%; height:auto; display:block; }
+/* hero image - FIXED: adjusted to show full image without cropping */
+.td2-hero{ margin:20px 0 8px; border-radius:16px; border:1px solid var(--td-border); max-width:600px; background:var(--td-bg); padding:16px; }
+.td2-hero img{ width:100%; height:auto; display:block; object-fit:contain; border-radius:8px; }
 
 /* sections */
 .td2-section{ margin-top:20px; }

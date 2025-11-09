@@ -83,3 +83,55 @@ html, body, #root { font-family:'Poppins',sans-serif; }
 @media (max-width: 420px){
   .tp-card-img{ height: 150px; }
 }
+
+
+/* inner layout like the sample card */
+.tp-card-inner{
+  padding: 18px 18px 16px;
+}
+
+/* tiny rounded image badge */
+.tp-thumb{
+  width: 56px; height: 56px;
+  border-radius: 12px;
+  background: #eef7f0;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+.tp-thumb img{
+  width: 100%; height: 100%; object-fit: cover; display: block;
+}
+
+/* title + description */
+.tp-card-title{ 
+  font-weight: 800; color: var(--ink); 
+  font-size: 17px; line-height: 1.25; 
+  margin: 2px 0 8px; 
+}
+.tp-card-desc{
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+/* actions to match the screenshot style */
+.tp-actions{ display: flex; gap: 12px; }
+.tp-actions .ant-btn{ height: 40px; border-radius: var(--radius-sm); flex: 1; }
+
+.tp-cta{ 
+  background: var(--brand); border-color: var(--brand); font-weight: 700; 
+}
+.tp-cta:hover{ background: var(--brand-700) !important; border-color: var(--brand-700) !important; }
+
+.tp-ghost{
+  background: #fff;
+  border: 2px solid var(--brand);
+  color: var(--brand-700);
+  font-weight: 700;
+}
+.tp-ghost:hover{
+  color: #fff !important;
+  background: var(--brand-700) !important;
+  border-color: var(--brand-700) !important;
+}
