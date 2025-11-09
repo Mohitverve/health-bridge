@@ -1,1246 +1,930 @@
-// src/pages/Admin.jsx
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
-  Layout, Menu, Form, Input, Button, DatePicker, message, Table, Modal, Tag,
-  Popconfirm, Upload, Space, Drawer, Select, Divider, Typography, Card, InputNumber, Empty
-} from 'antd';
+  App as AntdApp,
+  Button,
+  Card,
+  Col,
+  ConfigProvider,
+  Flex,
+  Form,
+  Grid,
+  Image,
+  Input,
+  InputNumber,
+  Modal,
+  Popconfirm,
+  Row,
+  Space,
+  Table,
+  Tabs,
+  Tag,
+  Tooltip,
+  Typography,
+  Upload,
+  message,
+} from "antd";
 import {
-  addDoc, collection, getDocs, updateDoc, deleteDoc, doc, writeBatch
-} from 'firebase/firestore';
-import { db } from '../firebase';
-import {
-  PlusOutlined, UploadOutlined, FileExcelOutlined, InboxOutlined,
-  SearchOutlined, DatabaseOutlined, EditOutlined, DeleteOutlined
-} from '@ant-design/icons';
-import Papa from 'papaparse';
-import dayjs from 'dayjs';
-import '../styles/Admin.css';
+  PlusOutlined,
+  UploadOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  ReloadOutlined,
+  EyeOutlined,
+} from "@ant-design/icons";
 
-/* ======================== TipTap (React 19 friendly) ======================= */
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import LinkExt from '@tiptap/extension-link';
+import {
+  collection,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  onSnapshot,
+  serverTimestamp,
+  query,
+  orderBy,
+} from "firebase/firestore";
 
-/* ----------------------- Cloudinary Upload (unsigned) ---------------------- */
+// Optional Cloudinary config (or just paste URLs)
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
 async function uploadToCloudinary(file) {
-  const cloud = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
-  const preset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
-  if (!cloud || !preset) {
-    throw new Error(
-      'Cloudinary env vars missing. Set VITE_CLOUDINARY_CLOUD_NAME and VITE_CLOUDINARY_UPLOAD_PRESET'
-    );
-  }
-  const url = `https://api.cloudinary.com/v1_1/${cloud}/image/upload`;
-  const fd = new FormData();
-  fd.append('file', file);
-  fd.append('upload_preset', preset);
-  const res = await fetch(url, { method: 'POST', body: fd });
-  if (!res.ok) throw new Error('Cloudinary upload failed');
-  const json = await res.json();
-  return json.secure_url;
+  if (!CLOUD_NAME || !UPLOAD_PRESET) throw new Error("Cloudinary env missing");
+  const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+  const res = await fetch(url, { method: "POST", body: formData });
+  if (!res.ok) throw new Error("Upload failed");
+  const data = await res.json();
+  return data.secure_url;
 }
 
-function CloudinaryUploadButton({ onUploaded, children, size = 'small' }) {
-  const [loading, setLoading] = useState(false);
-  const inputRef = useRef(null);
-  const choose = () => inputRef.current?.click();
+const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
 
-  const handleChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setLoading(true);
-    try {
-      const url = await uploadToCloudinary(file);
-      onUploaded?.(url);
-      message.success('Image uploaded');
-    } catch (err) {
-      console.error(err);
-      message.error('Upload failed');
-    } finally {
-      setLoading(false);
-      e.target.value = '';
-    }
-  };
+const useCommonTableProps = () => ({
+  size: "small",
+  scroll: { x: 800 },
+  pagination: { pageSize: 8, showSizeChanger: false },
+});
 
+const emptyHospital = {
+  name: "",
+  city: "",
+  country: "",
+  phone: "",
+  imageUrl: "",
+  description: "", // short
+  about: "", // long
+  facilities: [], // strings (optional)
+  departments: [], // strings (optional)
+  doctors: [], // {name, specialty} (optional)
+};
+
+const emptyTreatment = {
+  title: "",
+  imageUrl: "",
+  description: "",
+  procedures: "",
+  costing: [], // [{label, price}]
+};
+
+function MobileHeader({ title, extra }) {
   return (
-    <>
-      <input type="file" accept="image/*" hidden ref={inputRef} onChange={handleChange} />
-      <Button icon={<UploadOutlined />} loading={loading} size={size} onClick={choose}>
-        {children ?? 'Upload Image'}
-      </Button>
-    </>
+    <Flex align="center" justify="space-between" style={{ marginBottom: 12 }}>
+      <Title level={4} style={{ margin: 0 }}>
+        {title}
+      </Title>
+      <Space wrap>{extra}</Space>
+    </Flex>
   );
 }
 
-/* ------------------------------ Small helpers ----------------------------- */
-const mkTag = (s) => <Tag key={s}>{s}</Tag>;
-const PAGINATION = { pageSize: 8, showSizeChanger: false };
-const getImageField = (row) => row.image || row.imageUrl || row.logoUrl || '';
+const ImageUpload = ({ value, onChange, setLoading }) => (
+  <Flex gap={8} align="center" wrap>
+    <Upload
+      showUploadList={false}
+      accept="image/*"
+      beforeUpload={() => false}
+      onChange={async ({ file }) => {
+        if (!file) return;
+        try {
+          setLoading?.(true);
+          const url = await uploadToCloudinary(file);
+          onChange?.(url);
+        } catch (e) {
+          // Will be replaced by modal.error via hook in component; keep fallback:
+          message.error("Image upload failed. Check Cloudinary env or paste URL.");
+        } finally {
+          setLoading?.(false);
+        }
+      }}
+    >
+      <Button icon={<UploadOutlined />}>Upload</Button>
+    </Upload>
+    {value && (
+      <Image
+        src={value}
+        width={56}
+        height={56}
+        style={{ objectFit: "cover", borderRadius: 8 }}
+      />
+    )}
+    <Input
+      placeholder="or paste image URL"
+      value={value}
+      onChange={(e) => onChange?.(e.target.value)}
+      style={{ maxWidth: 320 }}
+      allowClear
+    />
+  </Flex>
+);
 
-/* ------------------------------ Rich Editor --------------------------------
-   Stores/returns clean HTML like the old Quill-based one. */
-function RichEditor({ value, onChange, placeholder }) {
-  const editor = useEditor({
-    extensions: [
-      StarterKit.configure({ heading: { levels: [2, 3, 4] } }),
-      LinkExt.configure({ openOnClick: false, autolink: true }),
-    ],
-    content: value || '',
-    editorProps: {
-      attributes: {
-        class: 'tt-editor',
-      },
-    },
-    onUpdate({ editor }) {
-      onChange?.(editor.getHTML());
-    },
-  });
+export default function Admin({ db }) {
+  const screens = useBreakpoint();
+  const isMobile = !screens.md;
 
-  // sync external value into editor (e.g., when opening edit modal)
-  React.useEffect(() => {
-    if (!editor) return;
-    const html = editor.getHTML();
-    if (value != null && value !== html) {
-      editor.commands.setContent(value, false);
-    }
-  }, [value, editor]);
-
-  if (!editor) return null;
-
-  const run = (fn) => editor.chain().focus()[fn]().run();
-
-  return (
-    <div className="tt-wrapper">
-      <div className="tt-toolbar">
-        <button
-          type="button"
-          className={editor.isActive('bold') ? 'active' : ''}
-          onClick={() => run('toggleBold')}
-        >
-          B
-        </button>
-        <button
-          type="button"
-          className={editor.isActive('italic') ? 'active' : ''}
-          onClick={() => run('toggleItalic')}
-        >
-          I
-        </button>
-        <button
-          type="button"
-          onClick={() => run('toggleBulletList')}
-          className={editor.isActive('bulletList') ? 'active' : ''}
-        >
-          • List
-        </button>
-        <button
-          type="button"
-          onClick={() => run('toggleOrderedList')}
-          className={editor.isActive('orderedList') ? 'active' : ''}
-        >
-          1. List
-        </button>
-        <button type="button" onClick={() => editor.chain().focus().setParagraph().run()}>
-          P
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={editor.isActive('heading', { level: 2 }) ? 'active' : ''}
-        >
-          H2
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={editor.isActive('heading', { level: 3 }) ? 'active' : ''}
-        >
-          H3
-        </button>
-        <button
-          type="button"
-          onClick={() => editor.chain().focus().toggleHeading({ level: 4 }).run()}
-          className={editor.isActive('heading', { level: 4 }) ? 'active' : ''}
-        >
-          H4
-        </button>
-        <button type="button" onClick={() => editor.chain().focus().undo().run()}>
-          Undo
-        </button>
-        <button type="button" onClick={() => editor.chain().focus().redo().run()}>
-          Redo
-        </button>
-      </div>
-      <EditorContent editor={editor} />
-      {placeholder && !value && <div className="tt-placeholder">{placeholder}</div>}
-    </div>
-  );
-}
-
-/* --------------------------- Cost & Procedures UI -------------------------- */
-function CostEditor({ value = [], onChange }) {
-  const [rows, setRows] = useState(value);
-  useEffect(() => { setRows(value || []); }, [value]);
-
-  const update = (idx, key, v) => {
-    const next = rows.map((r, i) => (i === idx ? { ...r, [key]: v } : r));
-    setRows(next); onChange?.(next);
-  };
-  const addRow = () => {
-    const next = [...rows, { item: '', min: null, max: null, notes: '' }];
-    setRows(next); onChange?.(next);
-  };
-  const remove = (idx) => {
-    const next = rows.filter((_, i) => i !== idx);
-    setRows(next); onChange?.(next);
-  };
-
-  return (
-    <Space direction="vertical" style={{ width: '100%' }}>
-      {rows.map((r, i) => (
-        <div key={i} className="cost-row">
-          <Input placeholder="Item" value={r.item} onChange={(e) => update(i, 'item', e.target.value)} style={{ flex: 2 }} />
-          <Input placeholder="Min" type="number" value={r.min ?? ''} onChange={(e) => update(i, 'min', e.target.value ? Number(e.target.value) : null)} style={{ flex: 1 }} />
-          <Input placeholder="Max" type="number" value={r.max ?? ''} onChange={(e) => update(i, 'max', e.target.value ? Number(e.target.value) : null)} style={{ flex: 1 }} />
-          <Input placeholder="Notes" value={r.notes} onChange={(e) => update(i, 'notes', e.target.value)} style={{ flex: 2 }} />
-          <Button danger onClick={() => remove(i)}>Remove</Button>
-        </div>
-      ))}
-      <Button onClick={addRow} icon={<PlusOutlined />}>Add row</Button>
-    </Space>
-  );
-}
-
-function ProceduresEditor({ value = [], onChange }) {
-  const [items, setItems] = useState(value);
-  const [draft, setDraft] = useState('');
-  useEffect(() => { setItems(value || []); }, [value]);
-
-  const add = () => {
-    const v = draft.trim();
-    if (!v) return;
-    const next = [...items, v];
-    setItems(next); setDraft(''); onChange?.(next);
-  };
-  const remove = (idx) => {
-    const next = items.filter((_, i) => i !== idx);
-    setItems(next); onChange?.(next);
-  };
-
-  return (
-    <Space direction="vertical" style={{ width: '100%' }}>
-      <Space.Compact style={{ width: '100%' }}>
-        <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Add a procedure" />
-        <Button type="primary" onClick={add}>Add</Button>
-      </Space.Compact>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {items.map((p, i) => (
-          <Tag key={i} closable onClose={() => remove(i)}>{p}</Tag>
-        ))}
-      </div>
-    </Space>
-  );
-}
-
-/* ================================= Page =================================== */
-const { Sider, Content } = Layout;
-const { TextArea } = Input;
-const { Dragger } = Upload;
-
-export default function Admin() {
-  const [active, setActive] = useState('hospitals'); // sidebar nav
-  const [loading, setLoading] = useState(false);
-
-  const [hospitals, setHospitals] = useState([]);
-  const [treatments, setTreatments] = useState([]);
-  const [doctors, setDoctors] = useState([]);
-  const [inquiries, setInquiries] = useState([]);
-  const [blogs, setBlogs] = useState([]);
-
-  const [inqLoading, setInqLoading] = useState(true);
-  const [blogLoading, setBlogLoading] = useState(true);
-
-  // Edit modals
-  const [editHospital, setEditHospital] = useState(null);
-  const [editTreatment, setEditTreatment] = useState(null);
-  const [editDoctor, setEditDoctor] = useState(null);
-  const [editBlog, setEditBlog] = useState(null);
-
-  const [selectedDoctor, setSelectedDoctor] = useState(null);
-  const [docModalVisible, setDocModalVisible] = useState(false);
-
-  const [selectedInquiry, setSelectedInquiry] = useState(null);
-  const [inqModalVisible, setInqModalVisible] = useState(false);
-
-  const [selectedBlog, setSelectedBlog] = useState(null);
-  const [blogModalVisible, setBlogModalVisible] = useState(false);
-
-  // Quick search
-  const [quickQuery, setQuickQuery] = useState('');
-
-  // CSV import
-  const [importOpen, setImportOpen] = useState(false);
-  const [importCollection, setImportCollection] = useState('treatments');
-  const [parsedRows, setParsedRows] = useState([]);
-  const [importValid, setImportValid] = useState(false);
+  // Modal hook (context safe)
+  const [modal, modalContextHolder] = Modal.useModal();
 
   // Forms
   const [hospitalForm] = Form.useForm();
   const [treatmentForm] = Form.useForm();
-  const [doctorForm] = Form.useForm();
-  const [blogForm] = Form.useForm();
 
-  const [editHospitalForm] = Form.useForm();
-  const [editTreatmentForm] = Form.useForm();
-  const [editDoctorForm] = Form.useForm();
-  const [editBlogForm] = Form.useForm();
+  // State — hospitals
+  const [hospitals, setHospitals] = useState([]);
+  const [editingHospital, setEditingHospital] = useState(null);
+  const [hospitalUploading, setHospitalUploading] = useState(false);
 
-  /* ------------------------------ Data loading ----------------------------- */
-  const loadCollection = async (col, setter, setLoadingFn) => {
-    setLoadingFn(true);
-    const snap = await getDocs(collection(db, col));
-    setter(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    setLoadingFn(false);
-  };
+  // State — treatments
+  const [treatments, setTreatments] = useState([]);
+  const [editingTreatment, setEditingTreatment] = useState(null);
+  const [treatmentUploading, setTreatmentUploading] = useState(false);
 
+  // Enquiries
+  const [enquiries, setEnquiries] = useState([]);
+
+  // Live listeners (guard db)
   useEffect(() => {
-    loadCollection('hospitals', setHospitals, setLoading);
-    loadCollection('treatments', setTreatments, setLoading);
-    loadCollection('doctors', setDoctors, setLoading);
-    loadCollection('inquiries', setInquiries, setInqLoading);
-    loadCollection('blogs', setBlogs, setBlogLoading);
-  }, []);
+    if (!db) return;
 
-  /* ----------------------------- Create records ---------------------------- */
-  const submitToCollection = async (col, data, clearFn, setLoader = setLoading) => {
-    setLoader(true);
-    try {
-      await addDoc(collection(db, col), data);
-      message.success(`${col.slice(0, -1)} added`);
-      clearFn && clearFn();
-      await loadCollection(
-        col,
-        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, inquiries: setInquiries, blogs: setBlogs }[col],
-        col === 'inquiries' ? setInqLoading : col === 'blogs' ? setBlogLoading : setLoading
-      );
-    } catch (e) {
-      console.error(e);
-      message.error(`Error adding to ${col}`);
-    }
-    setLoader(false);
-  };
-
-  const onFinishHospital = (v) =>
-    submitToCollection('hospitals', {
-      name: v.name,
-      city: v.city,
-      country: v.country,
-      specialties: (v.specialties || '').split(',').map((s) => s.trim()).filter(Boolean),
-      image: v.imageUrl
-    }, () => hospitalForm.resetFields());
-
-  const onFinishTreatment = (v) =>
-    submitToCollection('treatments', {
-      name: v.name,
-      description: v.description || '',
-      descriptionHtml: v.descriptionHtml || '',
-      whyChooseHtml: v.whyChooseHtml || '',
-      costRows: Array.isArray(v.costRows) ? v.costRows : [],
-      procedures: Array.isArray(v.procedures) ? v.procedures : [],
-      category: v.category || '',
-      keywords: v.keywords || '',
-      pricing: v.pricing || null,
-      duration: v.duration || '',
-      image: v.imageUrl
-    }, () => treatmentForm.resetFields());
-
-  const onFinishDoctor = (v) =>
-    submitToCollection('doctors', {
-      name: v.name,
-      hospital: v.hospital,
-      specialty: (v.specialty || '').split(',').map((s) => s.trim()).filter(Boolean),
-      bio: v.bio,
-      image: v.imageUrl
-    }, () => doctorForm.resetFields());
-
-  const onFinishBlog = (v) =>
-    submitToCollection(
-      'blogs',
-      {
-        title: v.title,
-        excerpt: v.excerpt,
-        content: v.content,
-        imageUrl: v.imageUrl,
-        publishedDate: v.publishedDate?.toISOString?.() || new Date().toISOString()
-      },
-      () => blogForm.resetFields(),
-      setBlogLoading
+    const unsubHosp = onSnapshot(
+      query(collection(db, "hospitals"), orderBy("createdAt", "desc")),
+      (snap) => setHospitals(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
     );
 
-  /* ----------------------------- Update records ---------------------------- */
-  const updateRecord = async (col, id, data, form, closeFn, setLoader = setLoading) => {
-    setLoader(true);
-    try {
-      await updateDoc(doc(db, col, id), data);
-      message.success(`${col.slice(0, -1)} updated`);
-      closeFn?.();
-      form?.resetFields?.();
-      await loadCollection(
-        col,
-        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, blogs: setBlogs }[col],
-        col === 'blogs' ? setBlogLoading : setLoading
+    const unsubTrt = onSnapshot(
+      query(collection(db, "treatments"), orderBy("createdAt", "desc")),
+      (snap) => setTreatments(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
+
+    const unsubEnq = onSnapshot(
+      query(collection(db, "enquiries"), orderBy("createdAt", "desc")),
+      (snap) => setEnquiries(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
+    );
+
+    return () => {
+      unsubHosp?.();
+      unsubTrt?.();
+      unsubEnq?.();
+    };
+  }, [db]);
+
+  // ---- Hospitals ----
+  const handleHospitalSubmit = async (values) => {
+    if (!db) {
+      message.error(
+        "Firestore not ready. Ensure <Admin db={getFirestore(app)} /> is used."
       );
+      return;
+    }
+    try {
+      const payload = {
+        ...values,
+        facilities: (values.facilities || []).filter((x) => !!x),
+        departments: (values.departments || []).filter((x) => !!x),
+        doctors: (values.doctors || []).filter(
+          (d) => d && (d.name || d.specialty)
+        ),
+      };
+
+      if (editingHospital) {
+        await updateDoc(doc(db, "hospitals", editingHospital.id), {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        });
+        message.success("Hospital updated");
+      } else {
+        await addDoc(collection(db, "hospitals"), {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+        message.success("Hospital added");
+      }
+      setEditingHospital(null);
+      hospitalForm.resetFields();
     } catch (e) {
       console.error(e);
-      message.error(`Error updating ${col}`);
+      message.error("Failed to save hospital");
     }
-    setLoader(false);
   };
 
-  const onUpdateHospital = (v) =>
-    updateRecord('hospitals', editHospital.id, {
-      name: v.name,
-      city: v.city,
-      country: v.country,
-      specialties: (v.specialties || '').split(',').map((s) => s.trim()).filter(Boolean),
-      image: v.imageUrl
-    }, editHospitalForm, () => setEditHospital(null));
-
-  const onUpdateTreatment = (v) =>
-    updateRecord('treatments', editTreatment.id, {
-      name: v.name,
-      description: v.description || '',
-      descriptionHtml: v.descriptionHtml || '',
-      whyChooseHtml: v.whyChooseHtml || '',
-      costRows: Array.isArray(v.costRows) ? v.costRows : [],
-      procedures: Array.isArray(v.procedures) ? v.procedures : [],
-      category: v.category || '',
-      keywords: v.keywords || '',
-      pricing: v.pricing || null,
-      duration: v.duration || '',
-      image: v.imageUrl
-    }, editTreatmentForm, () => setEditTreatment(null));
-
-  const onUpdateDoctor = (v) =>
-    updateRecord('doctors', editDoctor.id, {
-      name: v.name,
-      hospital: v.hospital,
-      specialty: (v.specialty || '').split(',').map((s) => s.trim()).filter(Boolean),
-      bio: v.bio,
-      image: v.imageUrl
-    }, editDoctorForm, () => setEditDoctor(null));
-
-  const onUpdateBlog = (v) =>
-    updateRecord('blogs', editBlog.id, {
-      title: v.title,
-      excerpt: v.excerpt,
-      content: v.content,
-      imageUrl: v.imageUrl,
-      publishedDate: v.publishedDate?.toISOString?.() || editBlog.publishedDate
-    }, editBlogForm, () => setEditBlog(null), setBlogLoading);
-
-  /* ----------------------------- Delete records ---------------------------- */
-  const deleteRecord = async (col, id) => {
-    setLoading(true);
-    try {
-      await deleteDoc(doc(db, col, id));
-      message.success(`${col.slice(0, -1)} deleted`);
-      await loadCollection(
-        col,
-        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, blogs: setBlogs }[col],
-        col === 'blogs' ? setBlogLoading : setLoading
-      );
-    } catch (e) {
-      console.error(e);
-      message.error(`Error deleting ${col}`);
-    }
-    setLoading(false);
-  };
-
-  /* ---------------------------- Inquiry updates ---------------------------- */
-  const updateInquiryStatus = async (inq, status) => {
-    await updateDoc(doc(db, 'inquiries', inq.id), { status });
-    message.success(`Marked as ${status}`);
-    loadCollection('inquiries', setInquiries, setInqLoading);
-  };
-  const deleteInquiry = async (id) => {
-    await deleteDoc(doc(db, 'inquiries', id));
-    message.success('Inquiry deleted');
-    loadCollection('inquiries', setInquiries, setInqLoading);
-  };
-
-  /* ----------------------------- Edit handlers ---------------------------- */
-  const openEditHospital = (h) => {
-    setEditHospital(h);
-    editHospitalForm.setFieldsValue({
-      name: h.name, city: h.city, country: h.country,
-      specialties: (h.specialties || []).join(', '),
-      imageUrl: h.image
-    });
-  };
-
-  const openEditTreatment = (t) => {
-    setEditTreatment(t);
-    editTreatmentForm.setFieldsValue({
-      name: t.name,
-      description: t.description || '',
-      descriptionHtml: t.descriptionHtml || '',
-      whyChooseHtml: t.whyChooseHtml || '',
-      costRows: t.costRows || [],
-      procedures: t.procedures || [],
-      category: t.category,
-      keywords: t.keywords,
-      pricing: t.pricing,
-      duration: t.duration,
-      imageUrl: t.image
-    });
-  };
-
-  const openEditDoctor = (d) => {
-    setEditDoctor(d);
-    editDoctorForm.setFieldsValue({
-      name: d.name,
-      hospital: d.hospital,
-      specialty: (d.specialty || []).join(', '),
-      bio: d.bio,
-      imageUrl: d.image
-    });
-  };
-
-  const openEditBlog = (b) => {
-    setEditBlog(b);
-    editBlogForm.setFieldsValue({
-      title: b.title,
-      excerpt: b.excerpt,
-      content: b.content,
-      imageUrl: b.imageUrl,
-      publishedDate: b.publishedDate ? dayjs(b.publishedDate) : dayjs()
-    });
-  };
-
-  /* ------------------------------ Tables ---------------------------------- */
-  const withThumb = (cols) => [
+  const hospitalColumns = [
     {
-      title: '',
-      dataIndex: 'thumb',
-      key: 'thumb',
-      width: 56,
-      render: (_, row) => {
-        const src = getImageField(row);
-        if (!src) return null;
-        return (
-          <div className="thumb">
-            <img
-              src={src}
-              alt=""
-              onError={(e) => { e.currentTarget.style.opacity = 0.3; }}
-            />
-          </div>
-        );
-      }
+      title: "Image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      width: 90,
+      render: (src) =>
+        src ? (
+          <Image
+            src={src}
+            alt="hospital"
+            width={64}
+            height={48}
+            style={{ objectFit: "cover", borderRadius: 8 }}
+          />
+        ) : (
+          <Tag>None</Tag>
+        ),
     },
-    ...cols
-  ];
-
-  const hospitalCols = withThumb([
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'City', dataIndex: 'city', key: 'city' },
-    { title: 'Country', dataIndex: 'country', key: 'country' },
-    { title: 'Specialties', dataIndex: 'specialties', key: 'specialties', render: (arr) => (arr || []).map(mkTag) },
+    { title: "Name", dataIndex: "name", key: "name" },
+    { title: "City", dataIndex: "city", key: "city" },
+    { title: "Country", dataIndex: "country", key: "country" },
+    { title: "Phone", dataIndex: "phone", key: "phone", responsive: ["md"] },
     {
-      title: 'Actions',
-      key: 'actions',
-      width: 180,
-      render: (_, row) => (
-        <Space size="small">
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEditHospital(row)}>Edit</Button>
-          <Popconfirm title="Delete this hospital?" onConfirm={() => deleteRecord('hospitals', row.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>Delete</Button>
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ]);
-
-  const treatmentCols = withThumb([
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Category', dataIndex: 'category', key: 'category' },
-    {
-      title: 'Description',
-      dataIndex: 'description',
-      key: 'description',
-      render: (txt) => (txt || '').length > 60 ? (txt || '').slice(0, 60) + '…' : (txt || '')
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 180,
-      render: (_, row) => (
-        <Space size="small">
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEditTreatment(row)}>Edit</Button>
-          <Popconfirm title="Delete this treatment?" onConfirm={() => deleteRecord('treatments', row.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>Delete</Button>
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ]);
-
-  const doctorCols = withThumb([
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Hospital', dataIndex: 'hospital', key: 'hospital' },
-    { title: 'Specialty', dataIndex: 'specialty', key: 'specialty', render: (arr) => (arr || []).map(mkTag) },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 220,
-      render: (_, row) => (
-        <Space size="small">
-          <Button type="link" onClick={() => { setSelectedDoctor(row); setDocModalVisible(true); }}>View</Button>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEditDoctor(row)}>Edit</Button>
-          <Popconfirm title="Delete this doctor?" onConfirm={() => deleteRecord('doctors', row.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>Delete</Button>
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ]);
-
-  const inquiryCols = [
-    { title: 'Name', dataIndex: 'fullName', key: 'fullName' },
-    { title: 'Email', dataIndex: 'email', key: 'email' },
-    { title: 'Phone', dataIndex: 'mobile', key: 'mobile' },
-    { title: 'Condition', dataIndex: 'condition', key: 'condition' },
-    {
-      title: 'Status',
-      dataIndex: 'status',
-      key: 'status',
-      render: (s) => {
-        let color = 'gold', txt = s || 'New';
-        if (txt === 'In Progress') color = 'blue';
-        if (txt === 'Completed') color = 'green';
-        return <Tag color={color}>{txt}</Tag>;
-      }
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      render: (_, row) => (
-        <Space size="small">
-          <Button type="link" onClick={() => { setSelectedInquiry(row); setInqModalVisible(true); }}>View</Button>
-          {!['In Progress', 'Completed'].includes(row.status || '') && (
-            <Button type="link" onClick={() => updateInquiryStatus(row, 'In Progress')}>Contact</Button>
-          )}
-          {row.status === 'In Progress' && (
-            <Button type="link" onClick={() => updateInquiryStatus(row, 'Completed')}>Complete</Button>
-          )}
-          <Popconfirm title="Delete?" onConfirm={() => deleteInquiry(row.id)}>
-            <Button type="link" danger>Delete</Button>
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ];
-
-  const blogCols = withThumb([
-    { title: 'Title', dataIndex: 'title', key: 'title' },
-    {
-      title: 'Date',
-      dataIndex: 'publishedDate',
-      key: 'publishedDate',
-      render: (iso) => (iso ? new Date(iso).toLocaleDateString() : '-')
-    },
-    {
-      title: 'Actions',
-      key: 'actions',
-      width: 220,
-      render: (_, row) => (
-        <Space size="small">
-          <Button type="link" onClick={() => { setSelectedBlog(row); setBlogModalVisible(true); }}>View</Button>
-          <Button type="link" icon={<EditOutlined />} onClick={() => openEditBlog(row)}>Edit</Button>
-          <Popconfirm title="Delete?" onConfirm={() => deleteRecord('blogs', row.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />}>Delete</Button>
-          </Popconfirm>
-        </Space>
-      )
-    }
-  ]);
-
-  /* ----------------------------- Quick filtering --------------------------- */
-  const q = quickQuery.trim().toLowerCase();
-  const filterByQuery = (arr, keys) => (!q ? arr : arr.filter((r) => keys.some((k) => String(r[k] || '').toLowerCase().includes(q))));
-
-  const hospitalsV = useMemo(() => filterByQuery(hospitals, ['name', 'city', 'country']), [hospitals, q]);
-  const treatmentsV = useMemo(() => filterByQuery(treatments, ['name', 'description', 'category', 'keywords']), [treatments, q]);
-  const doctorsV = useMemo(() => filterByQuery(doctors, ['name', 'hospital']), [doctors, q]);
-  const inquiriesV = useMemo(() => filterByQuery(inquiries, ['fullName', 'email', 'mobile', 'condition']), [inquiries, q]);
-  const blogsV = useMemo(() => filterByQuery(blogs, ['title', 'excerpt', 'content']), [blogs, q]);
-
-  /* ------------------------------ CSV Importer ---------------------------- */
-  const templateFor = (col) => {
-    switch (col) {
-      case 'treatments': return ['name', 'description', 'category', 'keywords', 'pricing', 'duration', 'imageUrl'];
-      case 'hospitals':  return ['name', 'city', 'country', 'specialties', 'image'];
-      case 'doctors':    return ['name', 'hospital', 'specialty', 'bio', 'imageUrl'];
-      case 'blogs':      return ['title', 'excerpt', 'content', 'imageUrl', 'publishedDate'];
-      default: return [];
-    }
-  };
-
-  const handleCSV = (file) => {
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: ({ data, errors }) => {
-        if (errors?.length) {
-          console.error(errors[0]);
-          message.error('CSV parse error. Check headers/rows.');
-          setParsedRows([]); setImportValid(false); return;
-        }
-        const rows = data.map((r) =>
-          Object.fromEntries(Object.entries(r).map(([k, v]) => [k.trim(), typeof v === 'string' ? v.trim() : v]))
-        );
-        setParsedRows(rows);
-        const need = templateFor(importCollection);
-        const have = Object.keys(rows[0] || {});
-        const ok = need.every((n) => have.includes(n));
-        setImportValid(ok && rows.length > 0);
-        if (!ok) message.warning(`Missing columns. Required: ${need.join(', ')}`);
-      }
-    });
-    return false;
-  };
-
-  const doImport = async () => {
-    if (!importValid || parsedRows.length === 0) {
-      message.error('Nothing to import'); return;
-    }
-    setLoading(true);
-    try {
-      const batch = writeBatch(db);
-      const colRef = collection(db, importCollection);
-
-      parsedRows.forEach((raw) => {
-        const row = { ...raw };
-
-        if (importCollection === 'hospitals') {
-          if (row.specialties)
-            row.specialties = row.specialties.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
-          if (row.imageUrl && !row.image) {
-            row.image = row.imageUrl; delete row.imageUrl;
-          }
-        }
-        if (importCollection === 'treatments') {
-          if (row.pricing) row.pricing = parseFloat(row.pricing) || null;
-        }
-        if (importCollection === 'doctors') {
-          if (row.specialty)
-            row.specialty = row.specialty.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
-        }
-        if (importCollection === 'blogs') {
-          if (row.publishedDate) {
-            const guess = row.publishedDate.includes('/')
-              ? dayjs(row.publishedDate, 'DD/MM/YYYY')
-              : dayjs(row.publishedDate);
-            row.publishedDate = (guess.isValid() ? guess.toDate() : new Date()).toISOString();
-          } else {
-            row.publishedDate = new Date().toISOString();
-          }
-        }
-
-        batch.set(doc(colRef), row);
-      });
-
-      await batch.commit();
-      message.success(`Imported ${parsedRows.length} ${importCollection}`);
-      await loadCollection(
-        importCollection,
-        { hospitals: setHospitals, treatments: setTreatments, doctors: setDoctors, inquiries: setInquiries, blogs: setBlogs }[importCollection],
-        importCollection === 'blogs' ? setBlogLoading : importCollection === 'inquiries' ? setInqLoading : setLoading
-      );
-      setImportOpen(false); setParsedRows([]); setImportValid(false);
-    } catch (e) {
-      console.error(e);
-      message.error('Import failed');
-    }
-    setLoading(false);
-  };
-
-  /* -------------------------------- Sections UI --------------------------- */
-  const SectionHeader = ({ title }) => (
-    <div className="panel" style={{ padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-      <Typography.Title level={4} style={{ margin: 0 }}>{title}</Typography.Title>
-      <Input
-        allowClear
-        prefix={<SearchOutlined />}
-        placeholder="Quick search"
-        value={quickQuery}
-        onChange={(e) => setQuickQuery(e.target.value)}
-        className="topbar-search"
-      />
-    </div>
-  );
-
-  const HospitalsSection = () => (
-    <>
-      <SectionHeader title="Hospitals" />
-      <Card className="panel">
-        <Typography.Title level={4}>Add Hospital</Typography.Title>
-        <Form form={hospitalForm} layout="vertical" onFinish={onFinishHospital}>
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="city" label="City" rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="country" label="Country" rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="specialties" label="Specialties" extra="Comma-separate"><Input /></Form.Item>
-          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
-            <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
-          </Form.Item>
-          <Form.Item>
-            <CloudinaryUploadButton onUploaded={(url) => hospitalForm.setFieldsValue({ imageUrl: url })}>
-              Upload Image
-            </CloudinaryUploadButton>
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading}>
-              Add Hospital
-            </Button>
-          </Form.Item>
-        </Form>
-      </Card>
-
-      <Card className="panel">
-        <Table dataSource={hospitalsV} columns={hospitalCols} rowKey="id" pagination={PAGINATION} loading={loading} />
-      </Card>
-    </>
-  );
-
-  const TreatmentsSection = () => (
-    <>
-      <SectionHeader title="Treatments" />
-    <Card className="panel">
-      <Typography.Title level={4}>Add Treatment</Typography.Title>
-      <Form form={treatmentForm} layout="vertical" onFinish={onFinishTreatment}>
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="category" label="Category"><Input placeholder="e.g., Cardiology, Orthopedics" /></Form.Item>
-
-        <Form.Item label="Description (rich)">
-          <RichEditor
-            value={Form.useWatch('descriptionHtml', treatmentForm)}
-            onChange={(html) => treatmentForm.setFieldsValue({ descriptionHtml: html })}
-            placeholder="Write an overview, preparation, recovery…"
-          />
-        </Form.Item>
-        <Form.Item name="descriptionHtml" hidden><Input /></Form.Item>
-
-        <Form.Item label="Why choose (rich)">
-          <RichEditor
-            value={Form.useWatch('whyChooseHtml', treatmentForm)}
-            onChange={(html) => treatmentForm.setFieldsValue({ whyChooseHtml: html })}
-            placeholder="Why this procedure, outcomes, hospital strengths…"
-          />
-        </Form.Item>
-        <Form.Item name="whyChooseHtml" hidden><Input /></Form.Item>
-
-        <Form.Item label="Costing table">
-          <CostEditor
-            value={Form.useWatch('costRows', treatmentForm)}
-            onChange={(rows) => treatmentForm.setFieldsValue({ costRows: rows })}
-          />
-        </Form.Item>
-        <Form.Item name="costRows" hidden><Input /></Form.Item>
-
-        <Form.Item label="Procedures list">
-          <ProceduresEditor
-            value={Form.useWatch('procedures', treatmentForm)}
-            onChange={(arr) => treatmentForm.setFieldsValue({ procedures: arr })}
-          />
-        </Form.Item>
-        <Form.Item name="procedures" hidden><Input /></Form.Item>
-
-        <Form.Item name="keywords" label="Keywords" extra="Comma-separated for search">
-          <Input placeholder="surgery, heart, bypass" />
-        </Form.Item>
-        <Form.Item name="pricing" label="(Optional) Legacy pricing (USD)">
-          <InputNumber min={0} style={{ width: '100%' }} placeholder="5000" />
-        </Form.Item>
-        <Form.Item name="duration" label="Duration"><Input placeholder="e.g., 2–3 hours, 1 week recovery" /></Form.Item>
-
-        <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}>
-          <Input placeholder="https://res.cloudinary.com/.../image.jpg" />
-        </Form.Item>
-        <Form.Item>
-          <CloudinaryUploadButton onUploaded={(url) => treatmentForm.setFieldsValue({ imageUrl: url })}>
-            Upload Image
-          </CloudinaryUploadButton>
-        </Form.Item>
-
-        <Form.Item>
-          <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading}>
-            Add Treatment
-          </Button>
-        </Form.Item>
-      </Form>
-    </Card>
-
-      <Card className="panel">
-        <Table dataSource={treatmentsV} columns={treatmentCols} rowKey="id" pagination={PAGINATION} loading={loading} />
-      </Card>
-    </>
-  );
-
-  const DoctorsSection = () => (
-    <>
-      <SectionHeader title="Doctors" />
-      <Card className="panel">
-        <Typography.Title level={4}>Add Doctor</Typography.Title>
-        <Form form={doctorForm} layout="vertical" onFinish={onFinishDoctor}>
-          <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input placeholder="Dr. Smith" /></Form.Item>
-          <Form.Item name="hospital" label="Hospital" rules={[{ required: true }]}><Input placeholder="Apollo Hospital" /></Form.Item>
-          <Form.Item name="specialty" label="Specialty" extra="Comma-separate"><Input /></Form.Item>
-          <Form.Item name="bio" label="Bio"><TextArea rows={2} /></Form.Item>
-          <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}><Input placeholder="https://res.cloudinary.com/.../image.jpg" /></Form.Item>
-          <Form.Item>
-            <CloudinaryUploadButton onUploaded={(url) => doctorForm.setFieldsValue({ imageUrl: url })}>
-              Upload Image
-            </CloudinaryUploadButton>
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={loading}>Add Doctor</Button>
-          </Form.Item>
-        </Form>
-      </Card>
-
-      <Card className="panel">
-        <Table dataSource={doctorsV} columns={doctorCols} rowKey="id" pagination={PAGINATION} loading={loading} />
-      </Card>
-
-      <Modal
-        title="Doctor Details"
-        open={docModalVisible}
-        onCancel={() => setDocModalVisible(false)}
-        footer={[<Button key="close" onClick={() => setDocModalVisible(false)}>Close</Button>]}
-      >
-        {selectedDoctor ? (
-          <>
-            <p><strong>Name:</strong> {selectedDoctor.name}</p>
-            <p><strong>Hospital:</strong> {selectedDoctor.hospital}</p>
-            <p><strong>Specialty:</strong> {(selectedDoctor.specialty || []).join(', ')}</p>
-            <p><strong>Bio:</strong> {selectedDoctor.bio}</p>
-          </>
-        ) : <Empty description="No doctor selected" />}
-      </Modal>
-    </>
-  );
-
-  const InquiriesSection = () => (
-    <>
-      <SectionHeader title="Inquiries" />
-      <Card className="panel">
-        <Table dataSource={inquiriesV} columns={inquiryCols} rowKey="id" pagination={PAGINATION} loading={inqLoading} />
-      </Card>
-
-      <Modal
-        title="Inquiry Details"
-        open={inqModalVisible}
-        onCancel={() => setInqModalVisible(false)}
-        footer={[<Button key="close" onClick={() => setInqModalVisible(false)}>Close</Button>]}
-      >
-        {selectedInquiry ? (
-          <>
-            <p><strong>Name:</strong> {selectedInquiry.fullName}</p>
-            <p><strong>Email:</strong> {selectedInquiry.email}</p>
-            <p><strong>Phone:</strong> {selectedInquiry.mobile}</p>
-            <p><strong>Condition:</strong> {selectedInquiry.condition}</p>
-            <p><strong>Status:</strong> {selectedInquiry.status || 'New'}</p>
-          </>
-        ) : <Empty description="No inquiry selected" />}
-      </Modal>
-    </>
-  );
-
-  const BlogsSection = () => (
-    <>
-      <SectionHeader title="Blogs" />
-      <Card className="panel">
-        <Typography.Title level={4}>Add Blog Post</Typography.Title>
-        <Form form={blogForm} layout="vertical" onFinish={onFinishBlog}>
-          <Form.Item name="title" label="Title" rules={[{ required: true }]}><Input /></Form.Item>
-          <Form.Item name="excerpt" label="Excerpt" rules={[{ required: true }]}><TextArea rows={2} /></Form.Item>
-          <Form.Item name="content" label="Content" rules={[{ required: true }]}><TextArea rows={6} /></Form.Item>
-          <Form.Item name="imageUrl" label="Cover Image URL" rules={[{ required: true }]}><Input placeholder="https://res.cloudinary.com/.../cover.jpg" /></Form.Item>
-          <Form.Item>
-            <CloudinaryUploadButton onUploaded={(url) => blogForm.setFieldsValue({ imageUrl: url })}>
-              Upload Cover
-            </CloudinaryUploadButton>
-          </Form.Item>
-          <Form.Item name="publishedDate" label="Publish Date" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit" icon={<PlusOutlined />} loading={blogLoading}>Add Blog Post</Button>
-          </Form.Item>
-        </Form>
-      </Card>
-
-      <Card className="panel">
-        <Table dataSource={blogsV} columns={blogCols} rowKey="id" pagination={PAGINATION} loading={blogLoading} />
-      </Card>
-
-      <Modal
-        title={selectedBlog?.title || 'Blog'}
-        open={blogModalVisible}
-        onCancel={() => setBlogModalVisible(false)}
-        footer={[<Button key="close" onClick={() => setBlogModalVisible(false)}>Close</Button>]}
-        width={800}
-      >
-        {selectedBlog ? (
-          <>
-            {selectedBlog.imageUrl && (
-              <img
-                src={selectedBlog.imageUrl}
-                alt={selectedBlog.title}
-                style={{ width: '100%', marginBottom: 16, borderRadius: 8 }}
-              />
-            )}
-            <p className="muted" style={{ marginBottom: 16 }}>
-              {selectedBlog.publishedDate ? new Date(selectedBlog.publishedDate).toLocaleDateString() : ''}
-            </p>
-            <div style={{ lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
-              {selectedBlog.content}
-            </div>
-          </>
-        ) : <Empty description="No blog selected" />}
-      </Modal>
-    </>
-  );
-
-  /* ------------------------------- Edit Modals ----------------------------- */
-  const EditHospitalModal = () => (
-    <Modal title="Edit Hospital" open={!!editHospital} onCancel={() => setEditHospital(null)} footer={null} width={600}>
-      <Form form={editHospitalForm} layout="vertical" onFinish={onUpdateHospital}>
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="city" label="City" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="country" label="Country" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="specialties" label="Specialties" extra="Comma-separate"><Input /></Form.Item>
-        <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}><Input placeholder="https://res.cloudinary.com/.../image.jpg" /></Form.Item>
-        <Form.Item>
-          <CloudinaryUploadButton onUploaded={(url) => editHospitalForm.setFieldsValue({ imageUrl: url })}>
-            Upload Image
-          </CloudinaryUploadButton>
-        </Form.Item>
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>Update Hospital</Button>
-            <Button onClick={() => setEditHospital(null)}>Cancel</Button>
-          </Space>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-
-  const EditTreatmentModal = () => (
-    <Modal title="Edit Treatment" open={!!editTreatment} onCancel={() => setEditTreatment(null)} footer={null} width={820}>
-      <Form form={editTreatmentForm} layout="vertical" onFinish={onUpdateTreatment}>
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="category" label="Category"><Input placeholder="e.g., Cardiology, Orthopedics" /></Form.Item>
-
-        <Form.Item label="Description (rich)">
-          <RichEditor
-            value={Form.useWatch('descriptionHtml', editTreatmentForm)}
-            onChange={(html) => editTreatmentForm.setFieldsValue({ descriptionHtml: html })}
-            placeholder="Overview, preparation, recovery…"
-          />
-        </Form.Item>
-        <Form.Item name="descriptionHtml" hidden><Input /></Form.Item>
-
-        <Form.Item label="Why choose (rich)">
-          <RichEditor
-            value={Form.useWatch('whyChooseHtml', editTreatmentForm)}
-            onChange={(html) => editTreatmentForm.setFieldsValue({ whyChooseHtml: html })}
-            placeholder="Reasons to choose, outcomes, strengths…"
-          />
-        </Form.Item>
-        <Form.Item name="whyChooseHtml" hidden><Input /></Form.Item>
-
-        <Form.Item label="Costing table">
-          <CostEditor
-            value={Form.useWatch('costRows', editTreatmentForm)}
-            onChange={(rows) => editTreatmentForm.setFieldsValue({ costRows: rows })}
-          />
-        </Form.Item>
-        <Form.Item name="costRows" hidden><Input /></Form.Item>
-
-        <Form.Item label="Procedures list">
-          <ProceduresEditor
-            value={Form.useWatch('procedures', editTreatmentForm)}
-            onChange={(arr) => editTreatmentForm.setFieldsValue({ procedures: arr })}
-          />
-        </Form.Item>
-        <Form.Item name="procedures" hidden><Input /></Form.Item>
-
-        <Form.Item name="keywords" label="Keywords" extra="Comma-separated for search">
-          <Input placeholder="surgery, heart, bypass" />
-        </Form.Item>
-        <Form.Item name="pricing" label="(Optional) Legacy pricing (USD)"><InputNumber min={0} style={{ width: '100%' }} placeholder="5000" /></Form.Item>
-        <Form.Item name="duration" label="Duration"><Input placeholder="e.g., 2–3 hours, 1 week recovery" /></Form.Item>
-
-        <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}><Input placeholder="https://res.cloudinary.com/.../image.jpg" /></Form.Item>
-        <Form.Item>
-          <CloudinaryUploadButton onUploaded={(url) => editTreatmentForm.setFieldsValue({ imageUrl: url })}>
-            Upload Image
-          </CloudinaryUploadButton>
-        </Form.Item>
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>Update Treatment</Button>
-            <Button onClick={() => setEditTreatment(null)}>Cancel</Button>
-          </Space>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-
-  const EditDoctorModal = () => (
-    <Modal title="Edit Doctor" open={!!editDoctor} onCancel={() => setEditDoctor(null)} footer={null} width={600}>
-      <Form form={editDoctorForm} layout="vertical" onFinish={onUpdateDoctor}>
-        <Form.Item name="name" label="Name" rules={[{ required: true }]}><Input placeholder="Dr. Smith" /></Form.Item>
-        <Form.Item name="hospital" label="Hospital" rules={[{ required: true }]}><Input placeholder="Apollo Hospital" /></Form.Item>
-        <Form.Item name="specialty" label="Specialty" extra="Comma-separate"><Input /></Form.Item>
-        <Form.Item name="bio" label="Bio"><TextArea rows={2} /></Form.Item>
-        <Form.Item name="imageUrl" label="Image URL" rules={[{ required: true }]}><Input placeholder="https://res.cloudinary.com/.../image.jpg" /></Form.Item>
-        <Form.Item>
-          <CloudinaryUploadButton onUploaded={(url) => editDoctorForm.setFieldsValue({ imageUrl: url })}>
-            Upload Image
-          </CloudinaryUploadButton>
-        </Form.Item>
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={loading}>Update Doctor</Button>
-            <Button onClick={() => setEditDoctor(null)}>Cancel</Button>
-          </Space>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-
-  const EditBlogModal = () => (
-    <Modal title="Edit Blog Post" open={!!editBlog} onCancel={() => setEditBlog(null)} footer={null} width={700}>
-      <Form form={editBlogForm} layout="vertical" onFinish={onUpdateBlog}>
-        <Form.Item name="title" label="Title" rules={[{ required: true }]}><Input /></Form.Item>
-        <Form.Item name="excerpt" label="Excerpt" rules={[{ required: true }]}><TextArea rows={2} /></Form.Item>
-        <Form.Item name="content" label="Content" rules={[{ required: true }]}><TextArea rows={6} /></Form.Item>
-        <Form.Item name="imageUrl" label="Cover Image URL" rules={[{ required: true }]}><Input placeholder="https://res.cloudinary.com/.../cover.jpg" /></Form.Item>
-        <Form.Item>
-          <CloudinaryUploadButton onUploaded={(url) => editBlogForm.setFieldsValue({ imageUrl: url })}>
-            Upload Cover
-          </CloudinaryUploadButton>
-        </Form.Item>
-        <Form.Item name="publishedDate" label="Publish Date" rules={[{ required: true }]}><DatePicker style={{ width: '100%' }} /></Form.Item>
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit" loading={blogLoading}>Update Blog Post</Button>
-            <Button onClick={() => setEditBlog(null)}>Cancel</Button>
-          </Space>
-        </Form.Item>
-      </Form>
-    </Modal>
-  );
-
-  /* ------------------------------- Main Render ----------------------------- */
-  return (
-    <Layout className="admin-wrap" style={{ minHeight: '100vh' }}>
-      <Sider width={220} theme="light" style={{ borderRight: '1px solid var(--hair)' }}>
-        <div className="admin-topbar" style={{ position: 'static', borderBottom: 'none', background: 'transparent', padding: 16 }}>
-          <div className="topbar-left" style={{ fontSize: 16 }}>
-            <DatabaseOutlined />
-            <span>Admin</span>
-          </div>
-        </div>
-        <Menu
-          mode="inline"
-          selectedKeys={[active]}
-          onClick={(e) => setActive(e.key)}
-          items={[
-            { key: 'hospitals', label: 'Hospitals' },
-            { key: 'treatments', label: 'Treatments' },
-            { key: 'doctors', label: 'Doctors' },
-            { key: 'inquiries', label: 'Inquiries' },
-            { key: 'blogs', label: 'Blogs' },
-            { type: 'divider' },
-            { key: 'import', label: 'Bulk Import', icon: <FileExcelOutlined /> },
-          ]}
-          style={{ borderRight: 0 }}
-        />
-      </Sider>
-
-      <Layout>
-        <Content className="admin-page">
-          {active === 'hospitals' && <HospitalsSection />}
-          {active === 'treatments' && <TreatmentsSection />}
-          {active === 'doctors' && <DoctorsSection />}
-          {active === 'inquiries' && <InquiriesSection />}
-          {active === 'blogs' && <BlogsSection />}
-
-          {active === 'import' && (
-            <Card className="panel">
-              <Typography.Title level={4}>Bulk Import (CSV)</Typography.Title>
-              <Space direction="vertical" style={{ width: '100%' }}>
-                <Typography.Paragraph>
-                  Select a collection and upload a CSV file with the required headers.
-                </Typography.Paragraph>
-
-                <Select
-                  value={importCollection}
-                  onChange={(v) => { setImportCollection(v); setParsedRows([]); setImportValid(false); }}
-                  style={{ width: 280 }}
-                  options={[
-                    { label: 'Treatments', value: 'treatments' },
-                    { label: 'Hospitals', value: 'hospitals' },
-                    { label: 'Doctors', value: 'doctors' },
-                    { label: 'Blogs', value: 'blogs' }
-                  ]}
-                />
-
-                <div className="csv-template">
-                  <strong>Required columns:</strong>
-                  <div className="mono">{templateFor(importCollection).join(', ')}</div>
-                </div>
-
-                <Dragger accept=".csv" beforeUpload={handleCSV} multiple={false} maxCount={1} showUploadList>
-                  <p className="ant-upload-drag-icon"><InboxOutlined /></p>
-                  <p className="ant-upload-text">Click or drag CSV file here to upload</p>
-                  <p className="ant-upload-hint">We’ll parse and show a preview before import.</p>
-                </Dragger>
-
-                {parsedRows.length > 0 && (
-                  <>
-                    <Divider />
-                    <Typography.Text strong>Preview ({parsedRows.length})</Typography.Text>
-                    <div className="preview-table">
-                      <Table
-                        size="small"
-                        dataSource={parsedRows.slice(0, 10).map((r, i) => ({ ...r, _k: i }))}
-                        columns={Object.keys(parsedRows[0]).map((k) => ({ title: k, dataIndex: k }))}
-                        rowKey="_k"
-                        pagination={false}
-                        scroll={{ x: true }}
-                      />
-                      {parsedRows.length > 10 && <div className="muted">Showing first 10 rows…</div>}
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 160,
+      render: (_, record) => (
+        <Space>
+          <Tooltip title="Preview" getPopupContainer={() => document.body}>
+            <Button
+              icon={<EyeOutlined />}
+              size="small"
+              onClick={() =>
+                modal.info({
+                  title: record.name,
+                  width: 800,
+                  content: (
+                    <div style={{ maxHeight: 420, overflow: "auto" }}>
+                      {record.imageUrl && (
+                        <Image
+                          src={record.imageUrl}
+                          alt="preview"
+                          width={220}
+                          style={{ borderRadius: 8, marginBottom: 12 }}
+                        />
+                      )}
+                      <p>
+                        <b>Location:</b> {record.city}, {record.country}
+                      </p>
+                      {record.phone && (
+                        <p>
+                          <b>Phone:</b> {record.phone}
+                        </p>
+                      )}
+                      {record.description && (
+                        <>
+                          <Title level={5}>Short Description</Title>
+                          <p>{record.description}</p>
+                        </>
+                      )}
+                      {record.about && (
+                        <>
+                          <Title level={5}>About</Title>
+                          <p style={{ whiteSpace: "pre-wrap" }}>
+                            {record.about}
+                          </p>
+                        </>
+                      )}
+                      {!!record.facilities?.length && (
+                        <>
+                          <Title level={5}>Facilities</Title>
+                          <ul>
+                            {record.facilities.map((f, i) => (
+                              <li key={i}>{f}</li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      {!!record.departments?.length && (
+                        <>
+                          <Title level={5}>Departments</Title>
+                          <ul>
+                            {record.departments.map((d, i) => (
+                              <li key={i}>{d}</li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
+                      {!!record.doctors?.length && (
+                        <>
+                          <Title level={5}>Doctors</Title>
+                          <ul>
+                            {record.doctors.map((d, i) => (
+                              <li key={i}>
+                                {d.name}
+                                {d.specialty ? ` — ${d.specialty}` : ""}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      )}
                     </div>
+                  ),
+                })
+              }
+            />
+          </Tooltip>
+          <Tooltip title="Edit" getPopupContainer={() => document.body}>
+            <Button
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => {
+                setEditingHospital(record);
+                hospitalForm.setFieldsValue({ ...emptyHospital, ...record });
+                document
+                  .getElementById("hospital-form-card")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete hospital?"
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onConfirm={async () => {
+              try {
+                await deleteDoc(doc(db, "hospitals", record.id));
+                message.success("Deleted");
+              } catch (e) {
+                message.error("Failed to delete");
+              }
+            }}
+          >
+            <Button danger icon={<DeleteOutlined />} size="small" />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
 
-                    <Button type="primary" disabled={!importValid} onClick={doImport} icon={<UploadOutlined />}>
-                      Import {parsedRows.length} to “{importCollection}”
+  // ---- Treatments ----
+  const handleTreatmentSubmit = async (values) => {
+    if (!db) {
+      message.error(
+        "Firestore not ready. Ensure <Admin db={getFirestore(app)} /> is used."
+      );
+      return;
+    }
+    const payload = {
+      ...values,
+      costing: values.costing?.filter((r) => r && (r.label || r.price)) ?? [],
+    };
+    try {
+      if (editingTreatment) {
+        await updateDoc(doc(db, "treatments", editingTreatment.id), {
+          ...payload,
+          updatedAt: serverTimestamp(),
+        });
+        message.success("Treatment updated");
+      } else {
+        await addDoc(collection(db, "treatments"), {
+          ...payload,
+          createdAt: serverTimestamp(),
+        });
+        message.success("Treatment added");
+      }
+      setEditingTreatment(null);
+      treatmentForm.resetFields();
+    } catch (e) {
+      console.error(e);
+      message.error("Failed to save treatment");
+    }
+  };
+
+  const treatmentColumns = [
+    {
+      title: "Image",
+      dataIndex: "imageUrl",
+      key: "imageUrl",
+      width: 90,
+      render: (src) =>
+        src ? (
+          <Image
+            src={src}
+            alt="treatment"
+            width={64}
+            height={48}
+            style={{ objectFit: "cover", borderRadius: 8 }}
+          />
+        ) : (
+          <Tag>None</Tag>
+        ),
+    },
+    { title: "Title", dataIndex: "title", key: "title" },
+    {
+      title: "Actions",
+      key: "actions",
+      fixed: "right",
+      width: 160,
+      render: (_, record) => (
+        <Space>
+          <Tooltip title="Preview" getPopupContainer={() => document.body}>
+            <Button
+              icon={<EyeOutlined />}
+              size="small"
+              onClick={() =>
+                modal.info({
+                  title: record.title,
+                  width: 800,
+                  content: (
+                    <div style={{ maxHeight: 420, overflow: "auto" }}>
+                      {record.imageUrl && (
+                        <Image
+                          src={record.imageUrl}
+                          alt="preview"
+                          width={220}
+                          style={{ borderRadius: 8, marginBottom: 12 }}
+                        />
+                      )}
+                      {record.description && (
+                        <>
+                          <Title level={5}>Description</Title>
+                          <p style={{ whiteSpace: "pre-wrap" }}>
+                            {record.description}
+                          </p>
+                        </>
+                      )}
+                      {record.procedures && (
+                        <>
+                          <Title level={5}>Procedures</Title>
+                          <p style={{ whiteSpace: "pre-wrap" }}>
+                            {record.procedures}
+                          </p>
+                        </>
+                      )}
+                      {!!record.costing?.length && (
+                        <>
+                          <Title level={5}>Costing</Title>
+                          <Table
+                            size="small"
+                            rowKey={(r, i) => `${r.label}-${i}`}
+                            dataSource={record.costing}
+                            columns={[
+                              { title: "Item", dataIndex: "label" },
+                              { title: "Price", dataIndex: "price" },
+                            ]}
+                            pagination={false}
+                          />
+                        </>
+                      )}
+                    </div>
+                  ),
+                })
+              }
+            />
+          </Tooltip>
+          <Tooltip title="Edit" getPopupContainer={() => document.body}>
+            <Button
+              icon={<EditOutlined />}
+              size="small"
+              onClick={() => {
+                setEditingTreatment(record);
+                treatmentForm.setFieldsValue({ ...emptyTreatment, ...record });
+                document
+                  .getElementById("treatment-form-card")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            />
+          </Tooltip>
+          <Popconfirm
+            title="Delete treatment?"
+            okText="Delete"
+            okButtonProps={{ danger: true }}
+            onConfirm={async () => {
+              try {
+                await deleteDoc(doc(db, "treatments", record.id));
+                message.success("Deleted");
+              } catch (e) {
+                message.error("Failed to delete");
+              }
+            }}
+          >
+            <Button danger icon={<DeleteOutlined />} size="small" />
+          </Popconfirm>
+        </Space>
+      ),
+    },
+  ];
+
+  // ---- Enquiries ----
+  const enquiryColumns = [
+    { title: "Name", dataIndex: "name", key: "name" },
+    { title: "Email", dataIndex: "email", key: "email" },
+    { title: "Phone", dataIndex: "phone", key: "phone" },
+    {
+      title: "Message",
+      dataIndex: "message",
+      key: "message",
+      responsive: ["md"],
+      render: (v) => <Text ellipsis style={{ maxWidth: 260 }}>{v}</Text>,
+    },
+    {
+      title: "Submitted",
+      dataIndex: "createdAt",
+      key: "createdAt",
+      render: (ts) => (ts?.toDate ? ts.toDate().toLocaleString() : "—"),
+    },
+  ];
+
+  // ---- Tabs ----
+  const HospitalsTab = (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} md={10}>
+        <Card
+          id="hospital-form-card"
+          title={
+            <MobileHeader
+              title={editingHospital ? "Edit Hospital" : "Add Hospital"}
+              extra={
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    setEditingHospital(null);
+                    hospitalForm.resetFields();
+                  }}
+                />
+              }
+            />
+          }
+          variant="outlined"
+        >
+          <Form
+            layout="vertical"
+            form={hospitalForm}
+            initialValues={emptyHospital}
+            onFinish={handleHospitalSubmit}
+            onFinishFailed={() => message.error("Please fill required fields")}
+          >
+            <Form.Item
+              name="name"
+              label="Hospital Name"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Input placeholder="e.g., Apollo Hospitals" />
+            </Form.Item>
+
+            <Form.Item
+              name="city"
+              label="City"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Input placeholder="Mumbai" />
+            </Form.Item>
+
+            <Form.Item
+              name="country"
+              label="Country"
+              rules={[{ required: true, message: "Required" }]}
+            >
+              <Input placeholder="India" />
+            </Form.Item>
+
+            <Form.Item name="phone" label="Phone">
+              <Input placeholder="+91 98765 43210" />
+            </Form.Item>
+
+            <Form.Item name="imageUrl" label="Image">
+              <ImageUpload
+                value={hospitalForm.getFieldValue("imageUrl")}
+                onChange={(v) => hospitalForm.setFieldsValue({ imageUrl: v })}
+                setLoading={setHospitalUploading}
+              />
+            </Form.Item>
+
+            <Form.Item name="description" label="Short Description">
+              <Input.TextArea rows={3} placeholder="One or two lines" />
+            </Form.Item>
+
+            <Form.Item name="about" label="About the Hospital">
+              <Input.TextArea rows={5} placeholder="Overview, specialties…" />
+            </Form.Item>
+
+            {/* Facilities (optional) */}
+            <Form.List name="facilities">
+              {(fields, { add, remove }) => (
+                <Card size="small" title="Facilities (optional)" variant="outlined">
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {fields.map(({ key, name, ...rest }) => (
+                      <Flex key={key} gap={8}>
+                        <Form.Item
+                          {...rest}
+                          name={name}
+                          style={{ flex: 1, marginBottom: 8 }}
+                        >
+                          <Input placeholder="e.g., 24×7 Pharmacy" />
+                        </Form.Item>
+                        <Button danger onClick={() => remove(name)}>
+                          Remove
+                        </Button>
+                      </Flex>
+                    ))}
+                    <Button
+                      icon={<PlusOutlined />}
+                      type="dashed"
+                      onClick={() => add("")}
+                      block
+                    >
+                      Add Facility
                     </Button>
-                  </>
-                )}
-              </Space>
-            </Card>
-          )}
-        </Content>
-      </Layout>
+                  </Space>
+                </Card>
+              )}
+            </Form.List>
 
-      {/* Edit Modals */}
-      <EditHospitalModal />
-      <EditTreatmentModal />
-      <EditDoctorModal />
-      <EditBlogModal />
-    </Layout>
+            {/* Departments (optional) */}
+            <Form.List name="departments">
+              {(fields, { add, remove }) => (
+                <Card size="small" title="Departments (optional)" variant="outlined" style={{ marginTop: 12 }}>
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {fields.map(({ key, name, ...rest }) => (
+                      <Flex key={key} gap={8}>
+                        <Form.Item
+                          {...rest}
+                          name={name}
+                          style={{ flex: 1, marginBottom: 8 }}
+                        >
+                          <Input placeholder="e.g., Cardiology" />
+                        </Form.Item>
+                        <Button danger onClick={() => remove(name)}>
+                          Remove
+                        </Button>
+                      </Flex>
+                    ))}
+                    <Button
+                      icon={<PlusOutlined />}
+                      type="dashed"
+                      onClick={() => add("")}
+                      block
+                    >
+                      Add Department
+                    </Button>
+                  </Space>
+                </Card>
+              )}
+            </Form.List>
+
+            {/* Doctors (optional) */}
+            <Form.List name="doctors">
+              {(fields, { add, remove }) => (
+                <Card size="small" title="Doctors (optional)" variant="outlined" style={{ marginTop: 12 }}>
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {fields.map(({ key, name, ...rest }) => (
+                      <Flex key={key} gap={8} wrap>
+                        <Form.Item
+                          {...rest}
+                          name={[name, "name"]}
+                          label="Name"
+                          style={{ flex: 1, minWidth: 160 }}
+                        >
+                          <Input placeholder="Doctor name" />
+                        </Form.Item>
+                        <Form.Item
+                          {...rest}
+                          name={[name, "specialty"]}
+                          label="Specialty"
+                          style={{ flex: 1, minWidth: 160 }}
+                        >
+                          <Input placeholder="e.g., Orthopedics" />
+                        </Form.Item>
+                        <Button danger onClick={() => remove(name)}>
+                          Remove
+                        </Button>
+                      </Flex>
+                    ))}
+                    <Button
+                      icon={<PlusOutlined />}
+                      type="dashed"
+                      onClick={() => add({ name: "", specialty: "" })}
+                      block
+                    >
+                      Add Doctor
+                    </Button>
+                  </Space>
+                </Card>
+              )}
+            </Form.List>
+
+            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+              {editingHospital && (
+                <Button
+                  onClick={() => {
+                    setEditingHospital(null);
+                    hospitalForm.resetFields();
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+              <Button type="primary" htmlType="submit" loading={hospitalUploading}>
+                {editingHospital ? "Update" : "Add"}
+              </Button>
+            </Space>
+          </Form>
+        </Card>
+      </Col>
+
+      <Col xs={24} md={14}>
+        <Card title={<MobileHeader title="Hospitals" />} variant="outlined">
+          <Table
+            rowKey="id"
+            dataSource={hospitals}
+            columns={hospitalColumns}
+            {...useCommonTableProps()}
+          />
+        </Card>
+      </Col>
+    </Row>
+  );
+
+  const TreatmentsTab = (
+    <Row gutter={[16, 16]}>
+      <Col xs={24} md={10}>
+        <Card
+          id="treatment-form-card"
+          title={
+            <MobileHeader
+              title={editingTreatment ? "Edit Treatment" : "Add Treatment"}
+              extra={
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={() => {
+                    setEditingTreatment(null);
+                    treatmentForm.resetFields();
+                  }}
+                />
+              }
+            />
+          }
+          variant="outlined"
+        >
+          <Form
+            layout="vertical"
+            form={treatmentForm}
+            initialValues={emptyTreatment}
+            onFinish={handleTreatmentSubmit}
+            onFinishFailed={() => message.error("Please fill required fields")}
+          >
+            <Form.Item name="title" label="Title" rules={[{ required: true }]}>
+              <Input placeholder="e.g., Knee Replacement" />
+            </Form.Item>
+
+            <Form.Item name="imageUrl" label="Cover Image">
+              <ImageUpload
+                value={treatmentForm.getFieldValue("imageUrl")}
+                onChange={(v) => treatmentForm.setFieldsValue({ imageUrl: v })}
+                setLoading={setTreatmentUploading}
+              />
+            </Form.Item>
+
+            <Form.Item name="description" label="Description">
+              <Input.TextArea rows={4} placeholder="Treatment details…" />
+            </Form.Item>
+
+            <Form.Item name="procedures" label="Procedures">
+              <Input.TextArea rows={4} placeholder="Step-by-step…" />
+            </Form.Item>
+
+            <Form.List name="costing">
+              {(fields, { add, remove }) => (
+                <Card size="small" title="Costing" variant="outlined">
+                  <Space direction="vertical" style={{ width: "100%" }}>
+                    {fields.map(({ key, name, ...rest }) => (
+                      <Flex key={key} gap={8} align="center" wrap>
+                        <Form.Item
+                          {...rest}
+                          name={[name, "label"]}
+                          style={{ flex: 1, minWidth: 160, marginBottom: 8 }}
+                        >
+                          <Input placeholder="Item / Package" />
+                        </Form.Item>
+                        <Form.Item
+                          {...rest}
+                          name={[name, "price"]}
+                          style={{ width: 140, marginBottom: 8 }}
+                        >
+                          <InputNumber
+                            prefix="$"
+                            placeholder="Price"
+                            style={{ width: "100%" }}
+                          />
+                        </Form.Item>
+                        <Button danger onClick={() => remove(name)}>
+                          Remove
+                        </Button>
+                      </Flex>
+                    ))}
+                    <Button
+                      icon={<PlusOutlined />}
+                      type="dashed"
+                      onClick={() => add({ label: "", price: "" })}
+                      block
+                    >
+                      Add Row
+                    </Button>
+                  </Space>
+                </Card>
+              )}
+            </Form.List>
+
+            <Space style={{ width: "100%", justifyContent: "flex-end" }}>
+              {editingTreatment && (
+                <Button
+                  onClick={() => {
+                    setEditingTreatment(null);
+                    treatmentForm.resetFields();
+                  }}
+                >
+                  Cancel
+                </Button>
+              )}
+              <Button type="primary" htmlType="submit" loading={treatmentUploading}>
+                {editingTreatment ? "Update" : "Add"}
+              </Button>
+            </Space>
+          </Form>
+        </Card>
+      </Col>
+
+      <Col xs={24} md={14}>
+        <Card title={<MobileHeader title="Treatments" />} variant="outlined">
+          <Table
+            rowKey="id"
+            dataSource={treatments}
+            columns={treatmentColumns}
+            {...useCommonTableProps()}
+          />
+        </Card>
+      </Col>
+    </Row>
+  );
+
+  const EnquiriesTab = (
+    <Card variant="outlined">
+      <Table
+        rowKey={(r) => r.id}
+        dataSource={enquiries}
+        columns={enquiryColumns}
+        {...useCommonTableProps()}
+      />
+    </Card>
+  );
+
+  return (
+    <AntdApp>
+      {modalContextHolder}
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "#146ef5",
+            borderRadius: 12,
+          },
+          components: {
+            Card: { headerFontSize: 16, padding: 16 },
+            Button: { controlHeight: isMobile ? 36 : 40 },
+            Input: { controlHeight: isMobile ? 36 : 40 },
+          },
+        }}
+      >
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: 16 }}>
+          <Flex justify="space-between" align="center" wrap style={{ marginBottom: 12 }}>
+            <Title level={3} style={{ margin: 0 }}>
+              Admin Console
+            </Title>
+            <Tag color="blue">Medway Horizons</Tag>
+          </Flex>
+
+          <Tabs
+            defaultActiveKey="hospitals"
+            items={[
+              { key: "hospitals", label: "Hospitals", children: HospitalsTab },
+              { key: "treatments", label: "Treatments", children: TreatmentsTab },
+              { key: "enquiries", label: "Enquiries", children: EnquiriesTab },
+            ]}
+          />
+
+          <Card style={{ marginTop: 12 }} variant="outlined">
+            <Text type="secondary">
+              Images can be uploaded (Cloudinary) or pasted as URLs. Hospital fields for departments,
+              doctors, and facilities are optional. Treatments support simple costing rows.
+            </Text>
+          </Card>
+        </div>
+      </ConfigProvider>
+    </AntdApp>
   );
 }

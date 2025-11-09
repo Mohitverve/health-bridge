@@ -15,6 +15,7 @@ import TreatmentsPage from './pages/TreatmentsPage';
 import GetQuotePage from './pages/GetQuotePage';
 import BlogsPage from './pages/BlogsPage';
 import TreatmentDetails from './pages/TreatmentDetails';
+import { db } from './firebase'; 
 
 export default function App() {
   return (
@@ -33,7 +34,7 @@ export default function App() {
                
                      <Route path="/Blogs"   element={<BlogsPage />} />
        
-        <Route path="/admin"       element={<Admin />} />
+       <Route path="/admin"       element={<Admin db={db} />} /> {/* ✅ Pass db */}
           <Route path="/Treatments"       element={<TreatmentsPage />} />
            <Route path="/treatments/:id" element={<TreatmentDetails />} />
       </Routes>
