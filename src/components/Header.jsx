@@ -10,7 +10,7 @@ export default function Header() {
       <div className="header-inner">
         {/* Logo / site title */}
         <div className="header-logo">
-          HealthBridge
+          Medway Horizons
         </div>
 
         {/* Optional nav or actions */}

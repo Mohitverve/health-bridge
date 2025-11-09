@@ -2,14 +2,14 @@
 
 .why-section {
   padding: 80px 24px;
-  background: #f9fafb;
+  background: #d0e3d1;
 }
 
 .why-heading {
   text-align: center;
   font-size: 2rem;
   margin-bottom: 48px;
-  color: #2d3748;
+  color: #fafafa;
 }
 
 /* Grid: 2 columns by default, 4 columns on large viewports */

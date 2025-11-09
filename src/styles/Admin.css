@@ -540,3 +540,56 @@ textarea.ant-input {
     page-break-inside: avoid;
   }
 }
+
+/* ======= Admin Shell Layout ======= */
+.admin-shell { min-height: 100vh; background: var(--bg); }
+.admin-main  { background: var(--bg); }
+
+/* Sidebar */
+.admin-sider {
+  border-right: 1px solid var(--hair);
+}
+.sider-brand {
+  display:flex; align-items:center; gap:10px;
+  padding:14px 16px; font-weight:800; color:var(--text);
+}
+.sider-brand .anticon { color: var(--brand); font-size: 20px; }
+.menu-label { display:flex; align-items:center; justify-content:space-between; width:100%; }
+.menu-badge .ant-badge-count { background: #f1f5f9; color:#0f172a; border:1px solid #e2e8f0; }
+
+/* Sidebar footer button */
+.sider-footer { padding: 12px; border-top: 1px solid var(--hair); }
+
+/* Topbar (refined for new layout) */
+.admin-topbar.new {
+  display:flex; align-items:center; gap:12px;
+  background: rgba(255,255,255,0.9);
+  backdrop-filter: saturate(160%) blur(10px);
+  border-bottom:1px solid var(--hair);
+}
+.hamburger { display:none; }
+@media (max-width: 991px) {
+  .hamburger { display:inline-flex; }
+}
+
+/* Drawer styles on mobile */
+.admin-drawer .drawer-brand {
+  border-bottom: 1px solid var(--hair);
+}
+
+/* Content wrapper inside layout (kept from your file) */
+/* TipTap editor look & feel (kept minimal; matches your theme vars) */
+.tt-wrapper { border: 1px solid var(--hair); border-radius: 10px; background: #fff; }
+.tt-toolbar {
+  display: flex; gap: 6px; padding: 8px; border-bottom: 1px solid var(--hair);
+  background: #fafbfc; border-radius: 10px 10px 0 0;
+}
+.tt-toolbar button {
+  border: 1px solid var(--hair); background:#fff; border-radius:8px; padding:4px 8px; font-weight:600;
+  cursor: pointer;
+}
+.tt-toolbar button.active { background: var(--brand-light); border-color: var(--brand); color: var(--brand); }
+.tt-editor { min-height: 180px; padding: 12px; border-radius: 0 0 10px 10px; }
+.tt-placeholder { position: relative; margin-top: -160px; padding: 12px; color: #9aa3af; pointer-events:none; }
+.cost-row { display:flex; gap:8px; }
+@media (max-width: 640px){ .cost-row { flex-direction: column; } }

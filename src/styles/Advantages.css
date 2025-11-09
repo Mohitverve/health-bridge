@@ -2,9 +2,8 @@
 
 :root {
   --accent: #17b3ad;
-  --text-dark: #ffffff;
   --text-muted: #ffffff;
-  --bg-light: #f0f4f8;
+  --bg-light: #d0e3d1;
   --card-bg: #ffffff;
 }
 
@@ -19,7 +18,7 @@
 /* Intro */
 .advantages__intro h2 {
   font-size: 2.75rem;
-  color: var(--text-dark);
+  color: white;
   margin-bottom: 8px;
 }
 .advantages__intro p {

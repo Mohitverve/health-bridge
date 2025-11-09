@@ -19,7 +19,7 @@ import TreatmentDetails from './pages/TreatmentDetails';
 export default function App() {
   return (
     <BrowserRouter>
-
+<Header/>
       <Navbar />
 
       <Routes>
