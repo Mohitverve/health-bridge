@@ -114,3 +114,17 @@ html, body, #root { font-family:'Poppins', sans-serif; }
 @media (max-width: 420px){
   .util-row{ grid-template-columns: 1fr; }
 }
+
+
+/* Read More link styled as a button */
+.shop-btn-link{
+  display:block; text-align:center;
+  padding:10px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--brand);
+  color:#fff; font-weight:700;
+  border:1px solid var(--brand);
+  box-shadow: var(--shadow-sm);
+}
+.shop-btn-link:hover{ color:#fff; background: var(--brand-700); border-color: var(--brand-700); }
+.shop-btn-link:focus-visible{ outline: 3px solid var(--brand-50); outline-offset: 2px; }

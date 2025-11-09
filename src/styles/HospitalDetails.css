@@ -1,0 +1,41 @@
+/* HospitalDetails.css */
+:root{
+  --ink:#0f172a;
+  --muted:#475569;
+  --stroke:rgba(2,6,23,.08);
+  --brand:#16a34a;
+  --brand-700:#15803d;
+  --brand-50:#f0fdf4;
+  --shadow-sm:0 8px 24px rgba(2,6,23,.06);
+  --shadow-lg:0 24px 64px rgba(2,6,23,.10);
+  --radius:14px;
+  --radius-sm:10px;
+}
+
+.hospital-details{ background:#f8faf9; }
+.hd-content{ max-width:1200px; margin:0 auto; padding: clamp(24px,4vw,40px) clamp(14px,4vw,24px); }
+
+.hd-header{ display:flex; gap:12px; justify-content:space-between; align-items:center; margin-bottom:12px; }
+
+.hd-card{ border-radius: var(--radius) !important; border:1px solid var(--stroke); box-shadow: var(--shadow-sm); }
+
+.hd-hero{ display:grid; grid-template-columns: 1fr; gap:14px; }
+.hd-hero-img{ width:100%; max-height:380px; object-fit:cover; border-radius:12px; }
+.hd-hero-meta{ display:flex; flex-direction:column; gap:6px; }
+.hd-title{ margin:0; color:var(--ink); font-weight:800; }
+
+.hd-meta-line .ant-tag{ border-radius:999px; }
+.hd-loc{ background:#fff; border:1px solid var(--stroke); color:var(--ink); }
+.hd-phone{ background: var(--brand-50); border-color: var(--brand); color: var(--brand-700); }
+
+.hd-section-title{ margin-top:10px; margin-bottom:8px !important; color:var(--ink); font-weight:700; }
+.hd-text{ color:#425466; }
+.prewrap{ white-space: pre-wrap; }
+
+.hd-list-item{ padding:2px 0; }
+
+.sticky{ position:sticky; top:16px; }
+
+@media (min-width: 992px){
+  .hd-hero{ grid-template-columns: 1.1fr 1fr; align-items:start; }
+}

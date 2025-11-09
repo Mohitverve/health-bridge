@@ -16,7 +16,7 @@ import GetQuotePage from './pages/GetQuotePage';
 import BlogsPage from './pages/BlogsPage';
 import TreatmentDetails from './pages/TreatmentDetails';
 import { db } from './firebase'; 
-
+import HospitalDetails from './pages/HospitalDetails';
 export default function App() {
   return (
     <BrowserRouter>
@@ -37,6 +37,7 @@ export default function App() {
        <Route path="/admin"       element={<Admin db={db} />} /> {/* ✅ Pass db */}
           <Route path="/Treatments"       element={<TreatmentsPage />} />
            <Route path="/treatments/:id" element={<TreatmentDetails />} />
+           <Route path="/hospitals/:id" element={<HospitalDetails />} />
       </Routes>
 
       <Footer />
