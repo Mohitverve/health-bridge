@@ -37,7 +37,7 @@ html, body, #root { font-family:'Poppins', sans-serif; }
 
 /* Sticky utility bar */
 .util-bar{
-  position: sticky; top: 8px; z-index: 2;
+  position: fixed; top: 8px; z-index: 2;
   background:#fff; border:1px solid var(--stroke);
   border-radius: var(--radius); box-shadow: var(--shadow-sm);
   padding: 12px; margin: 10px 0 20px;
