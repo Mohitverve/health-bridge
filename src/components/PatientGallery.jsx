@@ -20,7 +20,7 @@ export default function PatientGallery() {
     <section className="pg-section">
       <div className="pg-wrapper">
         <h2 className="pg-header">
-          Lyfboat has helped thousands of patients around the globe
+          Medway has helped thousands of patients around the globe
         </h2>
         <div className="pg-grid">
           {COUNTRIES.map(({ code, name }) => (
