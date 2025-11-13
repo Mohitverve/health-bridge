@@ -19,7 +19,7 @@ export default function AboutUsPage() {
       {/* HERO */}
       <section className="au-hero">
         <div className="au-hero-text">
-          <h1>About HealthBridge</h1>
+          <h1>About Us</h1>
           <p>
             We bridge patients and world-class care—removing obstacles and guiding you
             seamlessly from first inquiry through follow-up.

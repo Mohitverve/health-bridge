@@ -34,7 +34,7 @@ export default function WhyHealthBridge() {
 
   return (
     <section className="why-section">
-      <h2 className="why-heading">Why Choose HealthBridge?</h2>
+      <h2 className="why-heading">Why Choose MedwayHorizon?</h2>
       <div className="why-grid">
         {features.map((f, i) => (
           <motion.div
