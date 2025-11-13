@@ -1,3 +1,4 @@
+// src/pages/TreatmentsPage.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import {
   Layout,
@@ -22,6 +23,8 @@ import {
   ReloadOutlined,
   ArrowRightOutlined,
 } from "@ant-design/icons";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "../styles/TreatmentsPage.css";
 
 const { Content } = Layout;
@@ -57,7 +60,7 @@ export default function TreatmentsPage() {
             id: raw.id,
             title: raw.title || raw.name || "Untitled Treatment",
             imageUrl: raw.imageUrl || raw.image || "",
-            description: raw.description || "",
+            description: raw.description || "", // markdown text
             category: raw.category || "",
           };
         });
@@ -163,7 +166,11 @@ export default function TreatmentsPage() {
               <Option value="z-a">Sort: Z–A</Option>
             </Select>
 
-            <Button onClick={clearFilters} icon={<ReloadOutlined />} className="tp-reset">
+            <Button
+              onClick={clearFilters}
+              icon={<ReloadOutlined />}
+              className="tp-reset"
+            >
               Reset
             </Button>
           </div>
@@ -171,7 +178,10 @@ export default function TreatmentsPage() {
           {/* Active filters */}
           <div className="tp-active">
             {category !== "All" && (
-              <Tag closable onClose={(e) => (e.preventDefault(), setCategory("All"))}>
+              <Tag
+                closable
+                onClose={(e) => (e.preventDefault(), setCategory("All"))}
+              >
                 {category}
               </Tag>
             )}
@@ -205,7 +215,7 @@ export default function TreatmentsPage() {
                 <TreatmentCard
                   t={t}
                   onView={() => navigate(`/treatments/${t.id}`)}
-                  onEnquire={() => navigate("/Quote")}
+                  onEnquire={() => navigate("/quote")}
                 />
               </Col>
             ))}
@@ -217,7 +227,6 @@ export default function TreatmentsPage() {
 }
 
 function TreatmentCard({ t, onView, onEnquire }) {
-  // small square thumbnail (badge style)
   const thumb = cld(t.imageUrl, "f_auto,q_auto,w_120,h_120,c_thumb,g_face");
 
   return (
@@ -232,12 +241,16 @@ function TreatmentCard({ t, onView, onEnquire }) {
           />
         </div>
 
-        {/* title + desc */}
+        {/* title */}
         <div className="tp-card-title">{t.title}</div>
+
+        {/* markdown description snippet */}
         {t.description && (
-          <p className="tp-card-desc">
-            {t.description.length > 180 ? t.description.slice(0, 177) + "…" : t.description}
-          </p>
+          <div className="tp-card-desc markdown-snippet">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {t.description}
+            </ReactMarkdown>
+          </div>
         )}
 
         {/* actions */}
@@ -245,7 +258,11 @@ function TreatmentCard({ t, onView, onEnquire }) {
           <Button type="primary" className="tp-cta" onClick={onEnquire}>
             Enquire
           </Button>
-          <Button className="tp-ghost" icon={<ArrowRightOutlined />} onClick={onView}>
+          <Button
+            className="tp-ghost"
+            icon={<ArrowRightOutlined />}
+            onClick={onView}
+          >
             Read More
           </Button>
         </div>

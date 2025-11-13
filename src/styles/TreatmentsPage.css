@@ -1,137 +1,150 @@
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap');
-
-/* Palette: white + green, mature */
-:root{
-  --bg:#ffffff;
-  --ink:#0f172a;
-  --muted:#475569;
-  --stroke:rgba(2,6,23,.08);
-  --brand:#16a34a;
-  --brand-700:#15803d;
-  --soft:#f1f5f9;
-  --shadow-sm:0 8px 24px rgba(2,6,23,.06);
-  --shadow-lg:0 24px 64px rgba(2,6,23,.10);
-  --radius:14px;
-  --radius-sm:10px;
+/* Layout basics (keep your existing styles around this if you already have them) */
+.tp-layout {
+  background: #f8fafc;
 }
 
-html, body, #root { font-family:'Poppins',sans-serif; }
-
-.tp-layout  { background: var(--bg); min-height: 100vh; }
-.tp-content { max-width: 1200px; margin: 0 auto; padding: 24px 16px 40px; }
-
-/* Header */
-.tp-breadcrumbs{ margin-bottom: 8px; }
-.tp-headbar{
-  padding: 12px 16px; border:1px solid var(--stroke); background:#fff;
-  border-radius: var(--radius); display:flex; align-items:center; justify-content:space-between; gap:16px;
-}
-.tp-h1{ margin:0; font-size: clamp(1.6rem, 3.6vw, 2.2rem); line-height:1.1; font-weight:800; color:var(--ink); }
-.tp-subhead{ margin:4px 0 0; color:var(--muted); }
-.tp-stats .ant-statistic-title{ color:#64748b; }
-
-/* Sticky toolbar (no list view toggles) */
-.tp-toolbar{
-  
-  margin-top: 14px; margin-bottom: 16px;
-  border:1px solid var(--stroke); background:#fff; border-radius: var(--radius);
-  box-shadow: var(--shadow-sm); padding: 12px;
-}
-.tp-tool-row{ display:grid; grid-template-columns: 1fr 200px 160px auto; gap: 12px; }
-.tp-search .ant-input-affix-wrapper{ height: 44px; border-radius: var(--radius-sm) !important; }
-.tp-select .ant-select-selector{ border-radius: var(--radius-sm) !important; }
-.tp-reset{ border:1px solid var(--stroke); border-radius: var(--radius-sm); height: 44px; font-weight:700; }
-.tp-active{ display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
-
-/* Cards (grid view only) */
-.tp-card{
-  border:1px solid var(--stroke); border-radius: var(--radius); overflow:hidden;
-  transition: transform .2s ease, box-shadow .2s ease;
-}
-.tp-card:hover{ transform: translateY(-4px); box-shadow: var(--shadow-lg); }
-.tp-card-img{ width:100%; height: 180px; object-fit: cover; background:#f8fafc; }
-
-.tp-card-title{ font-weight:800; color:var(--ink); margin-top: 6px; font-size: 16.5px; }
-.tp-card-meta{ display:flex; gap:6px; flex-wrap:wrap; margin: 6px 0; }
-.tp-chip{ background: var(--soft); border-color:#e2e8f0; color:#0f172a; border-radius: 999px; }
-.tp-card-desc{ color: var(--muted); min-height: 44px; }
-
-.tp-cta{
-  background: var(--brand); border-color: var(--brand); font-weight: 700;
-}
-.tp-cta:hover{ background: var(--brand-700) !important; border-color: var(--brand-700) !important; }
-
-/* Empty / loading */
-.tp-empty{ text-align:center; padding: 48px 0; }
-
-/* ---------- Responsive layout ---------- */
-@media (max-width: 992px){
-  .tp-tool-row{ grid-template-columns: 1fr 1fr; }
-  .tp-reset{ grid-column: 1 / -1; }
+.tp-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 40px;
 }
 
-@media (max-width: 600px){
-  .tp-content{ padding: 20px 14px 36px; }
-  .tp-headbar{ padding: 10px 12px; }
-  .tp-tool-row{ grid-template-columns: 1fr; gap: 10px; }
-  .tp-search .ant-input-affix-wrapper{ height: 42px; }
-  .tp-reset{ height: 42px; width: 100%; }
-  .tp-card-img{ height: 160px; }
-  .tp-card-title{ font-size: 16px; }
-}
-
-@media (max-width: 420px){
-  .tp-card-img{ height: 150px; }
-}
-
-
-/* inner layout like the sample card */
-.tp-card-inner{
-  padding: 18px 18px 16px;
-}
-
-/* tiny rounded image badge */
-.tp-thumb{
-  width: 56px; height: 56px;
-  border-radius: 12px;
-  background: #eef7f0;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 14px;
+/* Card */
+.tp-card {
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.25);
   overflow: hidden;
 }
-.tp-thumb img{
-  width: 100%; height: 100%; object-fit: cover; display: block;
+
+.tp-card .ant-card-body {
+  padding: 20px 20px 22px; /* extra bottom padding so buttons aren't against the border */
 }
 
-/* title + description */
-.tp-card-title{ 
-  font-weight: 800; color: var(--ink); 
-  font-size: 17px; line-height: 1.25; 
-  margin: 2px 0 8px; 
-}
-.tp-card-desc{
-  color: var(--muted);
-  margin: 0 0 14px;
+.tp-card-inner {
+  display: flex;
+  flex-direction: column;
+  min-height: 260px; /* keeps cards similar height */
 }
 
-/* actions to match the screenshot style */
-.tp-actions{ display: flex; gap: 12px; }
-.tp-actions .ant-btn{ height: 40px; border-radius: var(--radius-sm); flex: 1; }
-
-.tp-cta{ 
-  background: var(--brand); border-color: var(--brand); font-weight: 700; 
+/* Thumbnail */
+.tp-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #e5f2ff;
+  margin-bottom: 14px;
 }
-.tp-cta:hover{ background: var(--brand-700) !important; border-color: var(--brand-700) !important; }
 
-.tp-ghost{
-  background: #fff;
-  border: 2px solid var(--brand);
-  color: var(--brand-700);
+.tp-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Title */
+.tp-card-title {
   font-weight: 700;
+  font-size: 18px;
+  color: #0f172a;
+  margin-bottom: 6px;
 }
-.tp-ghost:hover{
-  color: #fff !important;
-  background: var(--brand-700) !important;
-  border-color: var(--brand-700) !important;
+
+/* Description using markdown */
+.tp-card-desc {
+  font-size: 14px;
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 16px;
+}
+
+/* Remove extra bottom margin inside markdown paragraphs */
+.tp-card-desc p:last-child {
+  margin-bottom: 0;
+}
+
+/* Clamp to ~4 lines so all cards stay uniform */
+.markdown-snippet {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Actions */
+.tp-actions {
+  margin-top: auto;        /* pushes actions to the bottom */
+  padding-top: 12px;
+  display: flex;
+  gap: 10px;
+}
+
+.tp-cta {
+  flex: 1;
+}
+
+.tp-ghost {
+  flex: 1;
+  justify-content: center;
+}
+
+/* Make sure buttons don’t hug the border on narrow screens */
+@media (max-width: 768px) {
+  .tp-card .ant-card-body {
+    padding: 18px 18px 20px;
+  }
+}
+
+/* Header / toolbar tweaks (optional, if not already present) */
+.tp-header {
+  margin-bottom: 16px;
+}
+
+.tp-h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #0f172a;
+}
+
+.tp-subhead {
+  color: #64748b;
+  margin: 0;
+}
+
+.tp-toolbar {
+  margin-bottom: 16px;
+}
+
+.tp-tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.tp-search {
+  flex: 1 1 240px;
+}
+
+.tp-select {
+  min-width: 150px;
+}
+
+.tp-reset {
+  align-self: stretch;
+}
+
+@media (max-width: 600px) {
+  .tp-tool-row {
+    flex-direction: column;
+  }
+
+  .tp-reset {
+    width: 100%;
+  }
+
+  .tp-actions {
+    flex-direction: column;
+  }
 }

@@ -17,16 +17,17 @@ import {
 import {
   EnvironmentOutlined,
   PhoneOutlined,
-  HomeOutlined,
   ArrowLeftOutlined,
 } from "@ant-design/icons";
 import { doc, getDoc } from "firebase/firestore";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { db } from "../firebase";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import "../styles/HospitalDetails.css";
 
 const { Content } = Layout;
-const { Title, Paragraph, Text } = Typography;
+const { Title, Paragraph } = Typography;
 
 export default function HospitalDetails() {
   const { id } = useParams();
@@ -48,8 +49,30 @@ export default function HospitalDetails() {
 
   const doctorsCols = useMemo(
     () => [
-      { title: "Doctor", dataIndex: "name", key: "name" },
-      { title: "Specialty", dataIndex: "specialty", key: "specialty" },
+      {
+        title: "Doctor",
+        dataIndex: "name",
+        key: "name",
+        render: (text) => (
+          <div className="hd-rich-text hd-rich-text-sm">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {text || ""}
+            </ReactMarkdown>
+          </div>
+        ),
+      },
+      {
+        title: "Specialty",
+        dataIndex: "specialty",
+        key: "specialty",
+        render: (text) => (
+          <div className="hd-rich-text hd-rich-text-sm">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {text || ""}
+            </ReactMarkdown>
+          </div>
+        ),
+      },
     ],
     []
   );
@@ -81,6 +104,7 @@ export default function HospitalDetails() {
         token: {
           colorPrimary: "#16a34a", // green
           borderRadius: 12,
+          fontSize: 16,
         },
         components: {
           Card: { headerFontSize: 16, padding: 16 },
@@ -113,7 +137,9 @@ export default function HospitalDetails() {
                     className="hd-hero-img"
                   />
                   <div className="hd-hero-meta">
-                    <Title level={2} className="hd-title">{hospital?.name}</Title>
+                    <Title level={2} className="hd-title">
+                      {hospital?.name}
+                    </Title>
                     <div className="hd-meta-line">
                       <Tag color="green" className="hd-loc">
                         <EnvironmentOutlined />{" "}
@@ -130,17 +156,31 @@ export default function HospitalDetails() {
                   </div>
                 </div>
 
+                {/* Overview (short description) */}
                 {hospital?.description && (
                   <>
-                    <Title level={4} className="hd-section-title">Overview</Title>
-                    <Paragraph className="hd-text">{hospital.description}</Paragraph>
+                    <Title level={4} className="hd-section-title">
+                      Overview
+                    </Title>
+                    <div className="hd-rich-text">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {hospital.description}
+                      </ReactMarkdown>
+                    </div>
                   </>
                 )}
 
+                {/* About the Hospital (long markdown) */}
                 {hospital?.about && (
                   <>
-                    <Title level={4} className="hd-section-title">About the Hospital</Title>
-                    <Paragraph className="hd-text prewrap">{hospital.about}</Paragraph>
+                    <Title level={3} className="hd-section-title">
+                      About the Hospital
+                    </Title>
+                    <div className="hd-rich-text">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {hospital.about}
+                      </ReactMarkdown>
+                    </div>
                   </>
                 )}
               </Card>
@@ -148,7 +188,9 @@ export default function HospitalDetails() {
               {/* Doctors */}
               {(hospital?.doctors?.length ?? 0) > 0 && (
                 <Card className="hd-card">
-                  <Title level={4} className="hd-section-title">Doctors</Title>
+                  <Title level={4} className="hd-section-title">
+                    Doctors
+                  </Title>
                   <Table
                     size="small"
                     rowKey={(r, i) => `${r.name}-${i}`}
@@ -163,11 +205,21 @@ export default function HospitalDetails() {
             {/* Right: Quick facts */}
             <Col xs={24} lg={8}>
               <Card className="hd-card sticky">
-                <Title level={5} className="hd-section-title">At a glance</Title>
-                <Descriptions column={1} size="small" labelStyle={{ fontWeight: 600 }}>
-                  <Descriptions.Item label="Name">{hospital?.name || "—"}</Descriptions.Item>
+                <Title level={5} className="hd-section-title">
+                  At a glance
+                </Title>
+                <Descriptions
+                  column={1}
+                  size="small"
+                  labelStyle={{ fontWeight: 600 }}
+                >
+                  <Descriptions.Item label="Name">
+                    {hospital?.name || "—"}
+                  </Descriptions.Item>
                   <Descriptions.Item label="Location">
-                    {[hospital?.city, hospital?.country].filter(Boolean).join(", ") || "—"}
+                    {[hospital?.city, hospital?.country]
+                      .filter(Boolean)
+                      .join(", ") || "—"}
                   </Descriptions.Item>
                   <Descriptions.Item label="Phone">
                     {hospital?.phone || "—"}
@@ -177,11 +229,21 @@ export default function HospitalDetails() {
                 {(hospital?.facilities?.length ?? 0) > 0 && (
                   <>
                     <Divider />
-                    <Title level={5} className="hd-section-title">Facilities</Title>
+                    <Title level={5} className="hd-section-title">
+                      Facilities
+                    </Title>
                     <List
                       size="small"
                       dataSource={hospital.facilities}
-                      renderItem={(item) => <List.Item className="hd-list-item">{item}</List.Item>}
+                      renderItem={(item, idx) => (
+                        <List.Item className="hd-list-item" key={idx}>
+                          <div className="hd-rich-text hd-rich-text-sm">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {item}
+                            </ReactMarkdown>
+                          </div>
+                        </List.Item>
+                      )}
                     />
                   </>
                 )}
@@ -189,11 +251,21 @@ export default function HospitalDetails() {
                 {(hospital?.departments?.length ?? 0) > 0 && (
                   <>
                     <Divider />
-                    <Title level={5} className="hd-section-title">Departments</Title>
+                    <Title level={5} className="hd-section-title">
+                      Departments
+                    </Title>
                     <List
                       size="small"
                       dataSource={hospital.departments}
-                      renderItem={(item) => <List.Item className="hd-list-item">{item}</List.Item>}
+                      renderItem={(item, idx) => (
+                        <List.Item className="hd-list-item" key={idx}>
+                          <div className="hd-rich-text hd-rich-text-sm">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {item}
+                            </ReactMarkdown>
+                          </div>
+                        </List.Item>
+                      )}
                     />
                   </>
                 )}

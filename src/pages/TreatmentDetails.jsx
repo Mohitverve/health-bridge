@@ -20,6 +20,8 @@ import {
   MailOutlined,
   WhatsAppOutlined,
 } from '@ant-design/icons';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import '../styles/TreatmentDetails.css';
 
 const { Content } = Layout;
@@ -28,7 +30,9 @@ const { Title, Paragraph } = Typography;
 // Cloudinary helper (works even if you paste a non-Cloudinary URL; it’s a no-op)
 function cld(url, t = 'f_auto,q_auto') {
   if (!url) return url;
-  return url.includes('/upload/') ? url.replace('/upload/', `/upload/${t}/`) : url;
+  return url.includes('/upload/')
+    ? url.replace('/upload/', `/upload/${t}/`)
+    : url;
 }
 const getImg = (o) => o?.imageUrl || o?.image || '';
 
@@ -45,7 +49,7 @@ function normalizeTreatment(raw) {
   // Title
   const title = raw.title || raw.name || 'Treatment';
 
-  // Description (prefer html if present; else plain)
+  // Description (prefer html if present; else plain/markdown)
   const descriptionHtml = raw.descriptionHtml || null;
   const description = raw.description || '';
 
@@ -98,7 +102,9 @@ export default function TreatmentDetailPage() {
       setLoading(true);
       try {
         const snap = await getDoc(doc(db, 'treatments', id));
-        const data = snap.exists() ? normalizeTreatment({ id: snap.id, ...snap.data() }) : null;
+        const data = snap.exists()
+          ? normalizeTreatment({ id: snap.id, ...snap.data() })
+          : null;
         setT(data);
       } catch (e) {
         console.error(e);
@@ -138,14 +144,16 @@ export default function TreatmentDetailPage() {
         dataIndex: 'min',
         key: 'min',
         width: 140,
-        render: (v) => (v || v === 0 ? `$${Number(v).toLocaleString()}` : '—'),
+        render: (v) =>
+          v || v === 0 ? `$${Number(v).toLocaleString()}` : '—',
       },
       {
         title: 'Max (USD)',
         dataIndex: 'max',
         key: 'max',
         width: 140,
-        render: (v) => (v || v === 0 ? `$${Number(v).toLocaleString()}` : '—'),
+        render: (v) =>
+          v || v === 0 ? `$${Number(v).toLocaleString()}` : '—',
       },
       { title: 'Notes', dataIndex: 'notes', key: 'notes' },
     ],
@@ -178,9 +186,11 @@ export default function TreatmentDetailPage() {
 
   const imageUrl = cld(getImg(t), 'f_auto,q_auto,w_1400,h_700,c_fill');
   const hasNewCost = Array.isArray(t.costing) && t.costing.length > 0;
-  const hasLegacyCost = Array.isArray(t.legacyCostRows) && t.legacyCostRows.length > 0;
+  const hasLegacyCost =
+    Array.isArray(t.legacyCostRows) && t.legacyCostRows.length > 0;
   const hasAnyCost = hasNewCost || hasLegacyCost;
-  const hasProceduresList = Array.isArray(t.proceduresList) && t.proceduresList.length > 0;
+  const hasProceduresList =
+    Array.isArray(t.proceduresList) && t.proceduresList.length > 0;
   const hasProceduresText = !!t.proceduresText;
 
   return (
@@ -224,7 +234,9 @@ export default function TreatmentDetailPage() {
                 {t.title}
               </Title>
               {t.category && (
-                <div className="td2-kicker">India – Advanced {t.category}</div>
+                <div className="td2-kicker">
+                  India – Advanced {t.category}
+                </div>
               )}
             </header>
 
@@ -247,9 +259,15 @@ export default function TreatmentDetailPage() {
                   className="td2-rich"
                   dangerouslySetInnerHTML={{ __html: t.descriptionHtml }}
                 />
+              ) : t.description ? (
+                <div className="td2-rich">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {t.description}
+                  </ReactMarkdown>
+                </div>
               ) : (
-                <Paragraph className="td2-p prewrap">
-                  {t.description || 'No description available yet.'}
+                <Paragraph className="td2-p">
+                  No description available yet.
                 </Paragraph>
               )}
             </section>
@@ -259,9 +277,13 @@ export default function TreatmentDetailPage() {
               <section className="td2-section">
                 <h2 className="td2-h2">Procedures</h2>
 
-                {/* New admin: a single multi-line text field */}
+                {/* New admin: a single multi-line markdown text field */}
                 {hasProceduresText && (
-                  <Paragraph className="td2-p prewrap">{t.proceduresText}</Paragraph>
+                  <div className="td2-rich">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {t.proceduresText}
+                    </ReactMarkdown>
+                  </div>
                 )}
 
                 {/* Legacy: array of procedure strings */}
@@ -291,7 +313,8 @@ export default function TreatmentDetailPage() {
                       size="small"
                     />
                     <div className="td2-note">
-                      * Prices vary by hospital, surgeon, implant choice, and patient condition.
+                      * Prices vary by hospital, surgeon, implant choice, and
+                      patient condition.
                     </div>
                   </Card>
                 )}
@@ -307,7 +330,8 @@ export default function TreatmentDetailPage() {
                       size="small"
                     />
                     <div className="td2-note">
-                      * Prices vary by hospital, surgeon, implant choice, and patient condition.
+                      * Prices vary by hospital, surgeon, implant choice, and
+                      patient condition.
                     </div>
                   </Card>
                 )}
@@ -327,7 +351,10 @@ export default function TreatmentDetailPage() {
             <section className="td2-cta-grid">
               <Card className="td2-cta td2-cta-primary" bordered={false}>
                 <h3>Interested in this Treatment?</h3>
-                <p>Share your reports and get a personalized treatment plan and transparent estimate.</p>
+                <p>
+                  Share your reports and get a personalized treatment plan and
+                  transparent estimate.
+                </p>
                 <div className="td2-cta-actions">
                   <Button
                     type="primary"
@@ -349,9 +376,14 @@ export default function TreatmentDetailPage() {
 
               <Card className="td2-cta td2-cta-soft" bordered={false}>
                 <h3>Personalized Care, End-to-End</h3>
-                <p>Hospital shortlisting, doctor opinions, visas, travel & stay — we handle everything.</p>
+                <p>
+                  Hospital shortlisting, doctor opinions, visas, travel & stay —
+                  we handle everything.
+                </p>
                 <div className="td2-cta-actions">
-                  <Button onClick={() => navigate('/hospitals')}>Explore Hospitals</Button>
+                  <Button onClick={() => navigate('/hospitals')}>
+                    Explore Hospitals
+                  </Button>
                 </div>
               </Card>
             </section>

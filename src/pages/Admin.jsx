@@ -1,3 +1,4 @@
+// src/pages/Admin.jsx
 import React, { useEffect, useState } from "react";
 import {
   App as AntdApp,
@@ -31,7 +32,6 @@ import {
   ReloadOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
-
 import {
   collection,
   addDoc,
@@ -43,13 +43,47 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import "../styles/Admin.css";
 
-// Optional Cloudinary config (or just paste URLs)
 const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
 const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
 
+const { Title, Text } = Typography;
+const { useBreakpoint } = Grid;
+
+const emptyHospital = {
+  name: "",
+  city: "",
+  country: "",
+  phone: "",
+  imageUrl: "",
+  description: "",
+  about: "",
+  facilities: [],
+  departments: [],
+  doctors: [],
+};
+
+const emptyTreatment = {
+  title: "",
+  imageUrl: "",
+  description: "",
+  procedures: "",
+  costing: [],
+};
+
+const useCommonTableProps = () => ({
+  size: "small",
+  scroll: { x: 800 },
+  pagination: { pageSize: 8, showSizeChanger: false },
+});
+
 async function uploadToCloudinary(file) {
-  if (!CLOUD_NAME || !UPLOAD_PRESET) throw new Error("Cloudinary env missing");
+  if (!CLOUD_NAME || !UPLOAD_PRESET) {
+    throw new Error("Cloudinary env vars missing");
+  }
   const url = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/upload`;
   const formData = new FormData();
   formData.append("file", file);
@@ -59,36 +93,6 @@ async function uploadToCloudinary(file) {
   const data = await res.json();
   return data.secure_url;
 }
-
-const { Title, Text } = Typography;
-const { useBreakpoint } = Grid;
-
-const useCommonTableProps = () => ({
-  size: "small",
-  scroll: { x: 800 },
-  pagination: { pageSize: 8, showSizeChanger: false },
-});
-
-const emptyHospital = {
-  name: "",
-  city: "",
-  country: "",
-  phone: "",
-  imageUrl: "",
-  description: "", // short
-  about: "", // long
-  facilities: [], // strings (optional)
-  departments: [], // strings (optional)
-  doctors: [], // {name, specialty} (optional)
-};
-
-const emptyTreatment = {
-  title: "",
-  imageUrl: "",
-  description: "",
-  procedures: "",
-  costing: [], // [{label, price}]
-};
 
 function MobileHeader({ title, extra }) {
   return (
@@ -114,7 +118,6 @@ const ImageUpload = ({ value, onChange, setLoading }) => (
           const url = await uploadToCloudinary(file);
           onChange?.(url);
         } catch (e) {
-          // Will be replaced by modal.error via hook in component; keep fallback:
           message.error("Image upload failed. Check Cloudinary env or paste URL.");
         } finally {
           setLoading?.(false);
@@ -145,27 +148,20 @@ export default function Admin({ db }) {
   const screens = useBreakpoint();
   const isMobile = !screens.md;
 
-  // Modal hook (context safe)
   const [modal, modalContextHolder] = Modal.useModal();
-
-  // Forms
   const [hospitalForm] = Form.useForm();
   const [treatmentForm] = Form.useForm();
 
-  // State — hospitals
   const [hospitals, setHospitals] = useState([]);
   const [editingHospital, setEditingHospital] = useState(null);
   const [hospitalUploading, setHospitalUploading] = useState(false);
 
-  // State — treatments
   const [treatments, setTreatments] = useState([]);
   const [editingTreatment, setEditingTreatment] = useState(null);
   const [treatmentUploading, setTreatmentUploading] = useState(false);
 
-  // Enquiries
   const [enquiries, setEnquiries] = useState([]);
 
-  // Live listeners (guard db)
   useEffect(() => {
     if (!db) return;
 
@@ -191,24 +187,22 @@ export default function Admin({ db }) {
     };
   }, [db]);
 
-  // ---- Hospitals ----
+  // ---------- HOSPITALS ----------
   const handleHospitalSubmit = async (values) => {
     if (!db) {
-      message.error(
-        "Firestore not ready. Ensure <Admin db={getFirestore(app)} /> is used."
-      );
+      message.error("Firestore not ready");
       return;
     }
-    try {
-      const payload = {
-        ...values,
-        facilities: (values.facilities || []).filter((x) => !!x),
-        departments: (values.departments || []).filter((x) => !!x),
-        doctors: (values.doctors || []).filter(
-          (d) => d && (d.name || d.specialty)
-        ),
-      };
+    const payload = {
+      ...values,
+      facilities: (values.facilities || []).filter(Boolean),
+      departments: (values.departments || []).filter(Boolean),
+      doctors: (values.doctors || []).filter(
+        (d) => d && (d.name || d.specialty)
+      ),
+    };
 
+    try {
       if (editingHospital) {
         await updateDoc(doc(db, "hospitals", editingHospital.id), {
           ...payload,
@@ -238,13 +232,9 @@ export default function Admin({ db }) {
       width: 90,
       render: (src) =>
         src ? (
-          <Image
-            src={src}
-            alt="hospital"
-            width={64}
-            height={48}
-            style={{ objectFit: "cover", borderRadius: 8 }}
-          />
+          <div className="thumb">
+            <img src={src} alt="hospital" />
+          </div>
         ) : (
           <Tag>None</Tag>
         ),
@@ -257,7 +247,7 @@ export default function Admin({ db }) {
       title: "Actions",
       key: "actions",
       fixed: "right",
-      width: 160,
+      width: 180,
       render: (_, record) => (
         <Space>
           <Tooltip title="Preview" getPopupContainer={() => document.body}>
@@ -278,6 +268,7 @@ export default function Admin({ db }) {
                           style={{ borderRadius: 8, marginBottom: 12 }}
                         />
                       )}
+
                       <p>
                         <b>Location:</b> {record.city}, {record.country}
                       </p>
@@ -286,50 +277,75 @@ export default function Admin({ db }) {
                           <b>Phone:</b> {record.phone}
                         </p>
                       )}
+
                       {record.description && (
                         <>
                           <Title level={5}>Short Description</Title>
-                          <p>{record.description}</p>
+                          <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {record.description}
+                            </ReactMarkdown>
+                          </div>
                         </>
                       )}
+
                       {record.about && (
                         <>
                           <Title level={5}>About</Title>
-                          <p style={{ whiteSpace: "pre-wrap" }}>
-                            {record.about}
-                          </p>
+                          <div style={{ fontSize: 14, lineHeight: 1.7 }}>
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {record.about}
+                            </ReactMarkdown>
+                          </div>
                         </>
                       )}
+
                       {!!record.facilities?.length && (
                         <>
                           <Title level={5}>Facilities</Title>
                           <ul>
                             {record.facilities.map((f, i) => (
-                              <li key={i}>{f}</li>
+                              <li key={i}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {f}
+                                </ReactMarkdown>
+                              </li>
                             ))}
                           </ul>
                         </>
                       )}
+
                       {!!record.departments?.length && (
                         <>
                           <Title level={5}>Departments</Title>
                           <ul>
-                            {record.departments.map((d, i) => (
-                              <li key={i}>{d}</li>
+                            {record.departments.map((dpt, i) => (
+                              <li key={i}>
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                  {dpt}
+                                </ReactMarkdown>
+                              </li>
                             ))}
                           </ul>
                         </>
                       )}
+
                       {!!record.doctors?.length && (
                         <>
                           <Title level={5}>Doctors</Title>
                           <ul>
-                            {record.doctors.map((d, i) => (
-                              <li key={i}>
-                                {d.name}
-                                {d.specialty ? ` — ${d.specialty}` : ""}
-                              </li>
-                            ))}
+                            {record.doctors.map((d, i) => {
+                              const text = `${d.name || ""}${
+                                d.specialty ? ` — ${d.specialty}` : ""
+                              }`;
+                              return (
+                                <li key={i}>
+                                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {text}
+                                  </ReactMarkdown>
+                                </li>
+                              );
+                            })}
                           </ul>
                         </>
                       )}
@@ -360,7 +376,7 @@ export default function Admin({ db }) {
               try {
                 await deleteDoc(doc(db, "hospitals", record.id));
                 message.success("Deleted");
-              } catch (e) {
+              } catch {
                 message.error("Failed to delete");
               }
             }}
@@ -372,18 +388,17 @@ export default function Admin({ db }) {
     },
   ];
 
-  // ---- Treatments ----
+  // ---------- TREATMENTS ----------
   const handleTreatmentSubmit = async (values) => {
     if (!db) {
-      message.error(
-        "Firestore not ready. Ensure <Admin db={getFirestore(app)} /> is used."
-      );
+      message.error("Firestore not ready");
       return;
     }
     const payload = {
       ...values,
       costing: values.costing?.filter((r) => r && (r.label || r.price)) ?? [],
     };
+
     try {
       if (editingTreatment) {
         await updateDoc(doc(db, "treatments", editingTreatment.id), {
@@ -414,13 +429,9 @@ export default function Admin({ db }) {
       width: 90,
       render: (src) =>
         src ? (
-          <Image
-            src={src}
-            alt="treatment"
-            width={64}
-            height={48}
-            style={{ objectFit: "cover", borderRadius: 8 }}
-          />
+          <div className="thumb">
+            <img src={src} alt="treatment" />
+          </div>
         ) : (
           <Tag>None</Tag>
         ),
@@ -451,22 +462,41 @@ export default function Admin({ db }) {
                           style={{ borderRadius: 8, marginBottom: 12 }}
                         />
                       )}
+
                       {record.description && (
                         <>
                           <Title level={5}>Description</Title>
-                          <p style={{ whiteSpace: "pre-wrap" }}>
-                            {record.description}
-                          </p>
+                          <div
+                            style={{
+                              fontSize: 14,
+                              lineHeight: 1.7,
+                              color: "#4b5563",
+                            }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {record.description}
+                            </ReactMarkdown>
+                          </div>
                         </>
                       )}
+
                       {record.procedures && (
                         <>
                           <Title level={5}>Procedures</Title>
-                          <p style={{ whiteSpace: "pre-wrap" }}>
-                            {record.procedures}
-                          </p>
+                          <div
+                            style={{
+                              fontSize: 14,
+                              lineHeight: 1.7,
+                              color: "#4b5563",
+                            }}
+                          >
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              {record.procedures}
+                            </ReactMarkdown>
+                          </div>
                         </>
                       )}
+
                       {!!record.costing?.length && (
                         <>
                           <Title level={5}>Costing</Title>
@@ -509,7 +539,7 @@ export default function Admin({ db }) {
               try {
                 await deleteDoc(doc(db, "treatments", record.id));
                 message.success("Deleted");
-              } catch (e) {
+              } catch {
                 message.error("Failed to delete");
               }
             }}
@@ -521,7 +551,7 @@ export default function Admin({ db }) {
     },
   ];
 
-  // ---- Enquiries ----
+  // ---------- ENQUIRIES ----------
   const enquiryColumns = [
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Email", dataIndex: "email", key: "email" },
@@ -531,7 +561,11 @@ export default function Admin({ db }) {
       dataIndex: "message",
       key: "message",
       responsive: ["md"],
-      render: (v) => <Text ellipsis style={{ maxWidth: 260 }}>{v}</Text>,
+      render: (v) => (
+        <Text ellipsis style={{ maxWidth: 260 }}>
+          {v}
+        </Text>
+      ),
     },
     {
       title: "Submitted",
@@ -541,12 +575,13 @@ export default function Admin({ db }) {
     },
   ];
 
-  // ---- Tabs ----
+  // ---------- TAB CONTENT ----------
   const HospitalsTab = (
     <Row gutter={[16, 16]}>
       <Col xs={24} md={10}>
         <Card
           id="hospital-form-card"
+          className="panel"
           title={
             <MobileHeader
               title={editingHospital ? "Edit Hospital" : "Add Hospital"}
@@ -561,14 +596,12 @@ export default function Admin({ db }) {
               }
             />
           }
-          variant="outlined"
         >
           <Form
             layout="vertical"
             form={hospitalForm}
             initialValues={emptyHospital}
             onFinish={handleHospitalSubmit}
-            onFinishFailed={() => message.error("Please fill required fields")}
           >
             <Form.Item
               name="name"
@@ -607,17 +640,43 @@ export default function Admin({ db }) {
             </Form.Item>
 
             <Form.Item name="description" label="Short Description">
-              <Input.TextArea rows={3} placeholder="One or two lines" />
+              <>
+                <Input.TextArea
+                  rows={3}
+                  placeholder="Markdown allowed: **bold**, lists, headings, etc."
+                />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Supports Markdown (headings, bold, bullet points).
+                </Text>
+              </>
             </Form.Item>
 
             <Form.Item name="about" label="About the Hospital">
-              <Input.TextArea rows={5} placeholder="Overview, specialties…" />
+              <>
+                <Input.TextArea
+                  rows={8}
+                  placeholder={
+                    "Use Markdown for structure.\n\nExample:\n" +
+                    "## **A Commitment to World-Class Care**\n" +
+                    "- JCI and NABH accreditations\n" +
+                    "- Dedicated infection-free operating suites"
+                  }
+                />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Supports Markdown: <code>##</code> for headings, <code>-</code>{" "}
+                  for bullet points, <code>**bold**</code> for emphasis.
+                </Text>
+              </>
             </Form.Item>
 
-            {/* Facilities (optional) */}
             <Form.List name="facilities">
               {(fields, { add, remove }) => (
-                <Card size="small" title="Facilities (optional)" variant="outlined">
+                <Card
+                  size="small"
+                  title="Facilities (optional)"
+                  className="panel"
+                  style={{ marginBottom: 12 }}
+                >
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {fields.map(({ key, name, ...rest }) => (
                       <Flex key={key} gap={8}>
@@ -626,7 +685,12 @@ export default function Admin({ db }) {
                           name={name}
                           style={{ flex: 1, marginBottom: 8 }}
                         >
-                          <Input placeholder="e.g., 24×7 Pharmacy" />
+                          <Input.TextArea
+                            rows={3}
+                            placeholder={
+                              "Markdown supported.\n\nExample:\n- **24×7 Emergency & Trauma Care**\n- **Smart ICUs** with advanced monitoring"
+                            }
+                          />
                         </Form.Item>
                         <Button danger onClick={() => remove(name)}>
                           Remove
@@ -646,10 +710,14 @@ export default function Admin({ db }) {
               )}
             </Form.List>
 
-            {/* Departments (optional) */}
             <Form.List name="departments">
               {(fields, { add, remove }) => (
-                <Card size="small" title="Departments (optional)" variant="outlined" style={{ marginTop: 12 }}>
+                <Card
+                  size="small"
+                  title="Departments (optional)"
+                  className="panel"
+                  style={{ marginBottom: 12 }}
+                >
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {fields.map(({ key, name, ...rest }) => (
                       <Flex key={key} gap={8}>
@@ -658,7 +726,14 @@ export default function Admin({ db }) {
                           name={name}
                           style={{ flex: 1, marginBottom: 8 }}
                         >
-                          <Input placeholder="e.g., Cardiology" />
+                          <Input.TextArea
+                            rows={4}
+                            placeholder={
+                              "Markdown supported.\n\nExample:\n" +
+                              "## **Orthopaedics & Joint Replacement**\n" +
+                              "Robotic knee & hip replacements, spine surgery, and trauma care."
+                            }
+                          />
                         </Form.Item>
                         <Button danger onClick={() => remove(name)}>
                           Remove
@@ -678,10 +753,14 @@ export default function Admin({ db }) {
               )}
             </Form.List>
 
-            {/* Doctors (optional) */}
             <Form.List name="doctors">
               {(fields, { add, remove }) => (
-                <Card size="small" title="Doctors (optional)" variant="outlined" style={{ marginTop: 12 }}>
+                <Card
+                  size="small"
+                  title="Doctors (optional)"
+                  className="panel"
+                  style={{ marginBottom: 12 }}
+                >
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {fields.map(({ key, name, ...rest }) => (
                       <Flex key={key} gap={8} wrap>
@@ -691,7 +770,7 @@ export default function Admin({ db }) {
                           label="Name"
                           style={{ flex: 1, minWidth: 160 }}
                         >
-                          <Input placeholder="Doctor name" />
+                          <Input placeholder="Markdown allowed, e.g. **Dr. Anjali Sharma**" />
                         </Form.Item>
                         <Form.Item
                           {...rest}
@@ -699,7 +778,7 @@ export default function Admin({ db }) {
                           label="Specialty"
                           style={{ flex: 1, minWidth: 160 }}
                         >
-                          <Input placeholder="e.g., Orthopedics" />
+                          <Input placeholder="Markdown allowed, e.g. **Senior Consultant – Cardiology**" />
                         </Form.Item>
                         <Button danger onClick={() => remove(name)}>
                           Remove
@@ -739,7 +818,7 @@ export default function Admin({ db }) {
       </Col>
 
       <Col xs={24} md={14}>
-        <Card title={<MobileHeader title="Hospitals" />} variant="outlined">
+        <Card className="panel" title={<MobileHeader title="Hospitals" />}>
           <Table
             rowKey="id"
             dataSource={hospitals}
@@ -756,6 +835,7 @@ export default function Admin({ db }) {
       <Col xs={24} md={10}>
         <Card
           id="treatment-form-card"
+          className="panel"
           title={
             <MobileHeader
               title={editingTreatment ? "Edit Treatment" : "Add Treatment"}
@@ -770,14 +850,12 @@ export default function Admin({ db }) {
               }
             />
           }
-          variant="outlined"
         >
           <Form
             layout="vertical"
             form={treatmentForm}
             initialValues={emptyTreatment}
             onFinish={handleTreatmentSubmit}
-            onFinishFailed={() => message.error("Please fill required fields")}
           >
             <Form.Item name="title" label="Title" rules={[{ required: true }]}>
               <Input placeholder="e.g., Knee Replacement" />
@@ -792,16 +870,44 @@ export default function Admin({ db }) {
             </Form.Item>
 
             <Form.Item name="description" label="Description">
-              <Input.TextArea rows={4} placeholder="Treatment details…" />
+              <>
+                <Input.TextArea
+                  rows={4}
+                  placeholder={
+                    "You can use Markdown here.\n\nExample:\n" +
+                    "## **Overview**\n" +
+                    "- Minimally invasive procedure\n" +
+                    "- Short hospital stay\n" +
+                    "- Faster recovery"
+                  }
+                />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Supports Markdown: headings, bullet points, **bold**, *italic*.
+                </Text>
+              </>
             </Form.Item>
 
             <Form.Item name="procedures" label="Procedures">
-              <Input.TextArea rows={4} placeholder="Step-by-step…" />
+              <>
+                <Input.TextArea
+                  rows={4}
+                  placeholder={
+                    "Markdown supported.\n\nExample:\n" +
+                    "1. Pre-surgery evaluation\n" +
+                    "2. **Anaesthesia & preparation**\n" +
+                    "3. Robotic-assisted surgery\n" +
+                    "4. Post-op monitoring & rehab"
+                  }
+                />
+                <Text type="secondary" style={{ fontSize: 12 }}>
+                  Write step-by-step flow with numbered lists and highlights.
+                </Text>
+              </>
             </Form.Item>
 
             <Form.List name="costing">
               {(fields, { add, remove }) => (
-                <Card size="small" title="Costing" variant="outlined">
+                <Card size="small" title="Costing" className="panel">
                   <Space direction="vertical" style={{ width: "100%" }}>
                     {fields.map(({ key, name, ...rest }) => (
                       <Flex key={key} gap={8} align="center" wrap>
@@ -861,7 +967,7 @@ export default function Admin({ db }) {
       </Col>
 
       <Col xs={24} md={14}>
-        <Card title={<MobileHeader title="Treatments" />} variant="outlined">
+        <Card className="panel" title={<MobileHeader title="Treatments" />}>
           <Table
             rowKey="id"
             dataSource={treatments}
@@ -874,7 +980,7 @@ export default function Admin({ db }) {
   );
 
   const EnquiriesTab = (
-    <Card variant="outlined">
+    <Card className="panel">
       <Table
         rowKey={(r) => r.id}
         dataSource={enquiries}
@@ -896,33 +1002,35 @@ export default function Admin({ db }) {
           components: {
             Card: { headerFontSize: 16, padding: 16 },
             Button: { controlHeight: isMobile ? 36 : 40 },
-            Input: { controlHeight: isMobile ? 36 : 40 },
           },
         }}
       >
-        <div style={{ maxWidth: 1200, margin: "0 auto", padding: 16 }}>
-          <Flex justify="space-between" align="center" wrap style={{ marginBottom: 12 }}>
-            <Title level={3} style={{ margin: 0 }}>
-              Admin Console
-            </Title>
-            <Tag color="blue">Medway Horizons</Tag>
-          </Flex>
+        <div className="admin-wrap">
+          <div className="admin-page">
+            <Flex justify="space-between" align="center" wrap style={{ marginBottom: 12 }}>
+              <Title level={3} style={{ margin: 0 }}>
+                Admin Console
+              </Title>
+              <Tag color="blue">Medway Horizons</Tag>
+            </Flex>
 
-          <Tabs
-            defaultActiveKey="hospitals"
-            items={[
-              { key: "hospitals", label: "Hospitals", children: HospitalsTab },
-              { key: "treatments", label: "Treatments", children: TreatmentsTab },
-              { key: "enquiries", label: "Enquiries", children: EnquiriesTab },
-            ]}
-          />
+            <Tabs
+              defaultActiveKey="hospitals"
+              items={[
+                { key: "hospitals", label: "Hospitals", children: HospitalsTab },
+                { key: "treatments", label: "Treatments", children: TreatmentsTab },
+                { key: "enquiries", label: "Enquiries", children: EnquiriesTab },
+              ]}
+            />
 
-          <Card style={{ marginTop: 12 }} variant="outlined">
-            <Text type="secondary">
-              Images can be uploaded (Cloudinary) or pasted as URLs. Hospital fields for departments,
-              doctors, and facilities are optional. Treatments support simple costing rows.
-            </Text>
-          </Card>
+            <Card style={{ marginTop: 12 }} className="panel">
+              <Text type="secondary">
+                Hospital & Treatment text fields support Markdown so you can create
+                headings, bold text, bullet points, and beautiful structured content
+                for the detail pages.
+              </Text>
+            </Card>
+          </div>
         </div>
       </ConfigProvider>
     </AntdApp>

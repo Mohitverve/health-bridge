@@ -1,4 +1,3 @@
-/* HospitalDetails.css */
 :root{
   --ink:#0f172a;
   --muted:#475569;
@@ -13,29 +12,141 @@
 }
 
 .hospital-details{ background:#f8faf9; }
-.hd-content{ max-width:1200px; margin:0 auto; padding: clamp(24px,4vw,40px) clamp(14px,4vw,24px); }
+.hd-content{
+  max-width:1200px;
+  margin:0 auto;
+  padding: clamp(24px,4vw,40px) clamp(14px,4vw,24px);
+}
 
-.hd-header{ display:flex; gap:12px; justify-content:space-between; align-items:center; margin-bottom:12px; }
+.hd-header{
+  display:flex;
+  gap:12px;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:12px;
+}
 
-.hd-card{ border-radius: var(--radius) !important; border:1px solid var(--stroke); box-shadow: var(--shadow-sm); }
+.hd-card{
+  border-radius: var(--radius) !important;
+  border:1px solid var(--stroke);
+  box-shadow: var(--shadow-sm);
+}
 
-.hd-hero{ display:grid; grid-template-columns: 1fr; gap:14px; }
-.hd-hero-img{ width:100%; max-height:380px; object-fit:cover; border-radius:12px; }
-.hd-hero-meta{ display:flex; flex-direction:column; gap:6px; }
-.hd-title{ margin:0; color:var(--ink); font-weight:800; }
+.hd-hero{
+  display:grid;
+  grid-template-columns: 1fr;
+  gap:14px;
+}
+.hd-hero-img{
+  width:100%;
+  max-height:380px;
+  object-fit:cover;
+  border-radius:12px;
+}
+.hd-hero-meta{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.hd-title{
+  margin:0;
+  color:var(--ink);
+  font-weight:800;
+}
 
 .hd-meta-line .ant-tag{ border-radius:999px; }
-.hd-loc{ background:#fff; border:1px solid var(--stroke); color:var(--ink); }
-.hd-phone{ background: var(--brand-50); border-color: var(--brand); color: var(--brand-700); }
+.hd-loc{
+  background:#fff;
+  border:1px solid var(--stroke);
+  color:var(--ink);
+}
+.hd-phone{
+  background: var(--brand-50);
+  border-color: var(--brand);
+  color: var(--brand-700);
+}
 
-.hd-section-title{ margin-top:10px; margin-bottom:8px !important; color:var(--ink); font-weight:700; }
-.hd-text{ color:#425466; }
+.hd-section-title{
+  margin-top:10px;
+  margin-bottom:8px !important;
+  color:var(--ink);
+  font-weight:700;
+}
+
+/* Base body text */
+.hd-text{
+  color:#425466;
+  font-size:16px;
+  line-height:1.8;
+}
+
+/* For the Markdown-based about section */
+.hd-rich-text{
+  color:#374151;          /* slate-700 */
+  font-size:16px;
+  line-height:1.8;
+}
+
+/* Headings inside Markdown */
+.hd-rich-text h2{
+  font-size:22px;
+  font-weight:700;
+  margin-top:24px;
+  margin-bottom:8px;
+  color:#111827;
+}
+
+.hd-rich-text h3{
+  font-size:18px;
+  font-weight:600;
+  margin-top:18px;
+  margin-bottom:6px;
+  color:#111827;
+}
+
+/* Paragraphs & lists */
+.hd-rich-text p{
+  margin-bottom:0.75em;
+}
+
+.hd-rich-text ul,
+.hd-rich-text ol{
+  margin:0 0 0.75em 1.4rem;
+  padding:0;
+}
+
+.hd-rich-text li{
+  margin-bottom:0.35em;
+}
+
+/* Allow manual line breaks in non-Markdown text if needed */
 .prewrap{ white-space: pre-wrap; }
 
 .hd-list-item{ padding:2px 0; }
 
 .sticky{ position:sticky; top:16px; }
 
+/* Desktop layout */
 @media (min-width: 992px){
-  .hd-hero{ grid-template-columns: 1.1fr 1fr; align-items:start; }
+  .hd-hero{
+    grid-template-columns: 1.1fr 1fr;
+    align-items:start;
+  }
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px){
+  .hd-text,
+  .hd-rich-text{
+    font-size:15px;
+    line-height:1.75;
+  }
+
+  .hd-rich-text h2{ font-size:20px; }
+  .hd-rich-text h3{ font-size:17px; }
+}
+
+.hd-rich-text-sm {
+  font-size: 14px;
+  line-height: 1.6;
 }
