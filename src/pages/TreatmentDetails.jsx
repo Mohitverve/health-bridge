@@ -394,15 +394,7 @@ export default function TreatmentDetailPage() {
             Contact us Now
           </a>
 
-          <Button
-            className="td2-whatsapp"
-            shape="round"
-            size="large"
-            icon={<WhatsAppOutlined />}
-            onClick={() => navigate('/quote')}
-          >
-            Chat / Share Reports
-          </Button>
+        
         </Content>
       </Layout>
     </ConfigProvider>
