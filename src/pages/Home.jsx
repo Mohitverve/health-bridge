@@ -34,8 +34,9 @@ export default function Home({ scrollTo }) {
 <section>
   <TopHospitals/>
 </section>
-     <Advantages/>
 <PatientGallery/>
+     <Advantages/>
+
       <section id="contact">
         <ContactUs />
       </section>
